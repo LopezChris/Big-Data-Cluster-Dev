@@ -2,6 +2,12 @@
 
 yum install -y wget git net-tools
 
+##
+# Video Tutorials Referenced:
+# https://www.youtube.com/watch?v=SCovEsJ6Pe8&t=43s
+#
+#
+
 # Setup a network installation server
 # - Allows installation of CentOS7 on
 # multiple systems using a network boot server
@@ -259,6 +265,15 @@ STATIC_IP_NUM_NODE8=$(( $NETWORK_RANGE_IP_BASE_NUM + $IP_ADDRESS_NUM_TO_ADD_BY )
 STATIC_IP_NODE8=$(itoa $STATIC_IP_NUM_NODE8)
 printf "Static IP Node8: $STATIC_IP_NODE8\n"
 
+NODE1_SB=node1-sb.hortonworks.com
+NODE2_SB=node2-sb.hortonworks.com
+NODE3_SB=node3-sb.hortonworks.com
+NODE4_SB=node4-sb.hortonworks.com
+NODE5_SB=node5-sb.hortonworks.com
+NODE6_SB=node6-sb.hortonworks.com
+NODE7_SB=node7-sb.hortonworks.com
+NODE8_SB=node8-sb.hortonworks.com
+
 # Find Interface Name, ex: enp0s3
 # kernel lists them by name, we want the one related to ethernet
 # Reference: https://unix.stackexchange.com/questions/125400/how-can-i-find-available-network-interfaces
@@ -323,7 +338,7 @@ subnet $NETWORK_IP_ID netmask $SUBNETMASK {
         # The name of the initial boot file which is to be loaded by the client
         # Minnowboard is 00:08:A2:09.*.* architecture, so we go with x64bit
         # if option architecture-type = 00:07 {
-        #   filename "shim.efi";
+        #    filename "shim.efi";
         # } else {
           filename "grubx64.efi";
         # }
@@ -334,42 +349,42 @@ subnet $NETWORK_IP_ID netmask $SUBNETMASK {
 # Reference on hosts (nodes in cluster):
 # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/networking_guide/sec-dhcp-configuring-server
 host node1-sb {
-    option host-name "node1-sb.hortonworks.com";
+    option host-name "$NODE1_SB";
     hardware ethernet 00:08:A2:09:EF:88;
     fixed-address $STATIC_IP_NODE1;
 }
 host node2-sb {
-    option host-name "node2-sb.hortonworks.com";
+    option host-name "$NODE2_SB";
     hardware ethernet 00:08:A2:09:EF:AB;
     fixed-address $STATIC_IP_NODE2;
 }
 host node3-sb {
-    option host-name "node3-sb.hortonworks.com";
+    option host-name "$NODE3_SB";
     hardware ethernet 00:08:A2:09:BE:EA;
     fixed-address $STATIC_IP_NODE3;
 }
 host node4-sb {
-    option host-name "node4-sb.hortonworks.com";
+    option host-name "$NODE4_SB";
     hardware ethernet 00:08:A2:09:F0:62;
     fixed-address $STATIC_IP_NODE4;
 }
 host node5-sb {
-    option host-name "node5-sb.hortonworks.com";
+    option host-name "$NODE5_SB";
     hardware ethernet 00:08:A2:09:BD:E3;
     fixed-address $STATIC_IP_NODE5;
 }
 host node6-sb {
-    option host-name "node6-sb.hortonworks.com";
+    option host-name "$NODE6-SB";
     hardware ethernet 00:08:A2:09:EF:92;
     fixed-address $STATIC_IP_NODE6;
 }
 host node7-sb {
-    option host-name "node7-sb.hortonworks.com";
+    option host-name "$NODE7_SB";
     hardware ethernet 00:08:A2:09:F2:62;
     fixed-address $STATIC_IP_NODE7;
 }
 host node8-sb {
-    option host-name "node8-sb.hortonworks.com";
+    option host-name "$NODE8_SB";
     hardware ethernet 00:08:A2:09:BE:F2;
     fixed-address $STATIC_IP_NODE8;
 }
@@ -389,7 +404,7 @@ cp -pr /mnt/centos7-install/Packages/$GRUB2_EFI_PACKAGE /var/www/html/centos7-in
 # Copy shim-efi package to publicly available directory
 cp -pr /mnt/centos7-install/Packages/$SHIM_EFI_PACKAGE /var/www/html/centos7-install/
 umount /mnt/centos7-install/
-# Extract the grub2-efi package
+# Extract the grub2-efi and shim-efi package
 cd /var/www/html/centos7-install/
 rpm2cpio $GRUB2_EFI_PACKAGE | cpio -dimv
 rpm2cpio $SHIM_EFI_PACKAGE | cpio -dimv
@@ -397,10 +412,309 @@ rpm2cpio $SHIM_EFI_PACKAGE | cpio -dimv
 # Already in publicly available directory,
 
 # 5. Copy EFI boot images from your directory:
-cp boot/efi/EFI/centos/grubx64.efi /var/lib/tftpboot/
-cp boot/efi/EFI/centos/shim.efi /var/lib/tftpboot/
+cp -r boot/efi/EFI/centos/grubx64.efi /var/lib/tftpboot/
+cp -r boot/efi/EFI/centos/shim.efi /var/lib/tftpboot/
 
 cd ~/
+
+# Reference: https://unix.stackexchange.com/questions/77277/how-to-append-multiple-lines-to-a-file
+# tee -a /append_hosts.sh << EOF
+# #!/bin/bash
+# cat << EOT >> /etc/hosts
+# 10.10.2.11 node1-sb.hortonworks.com
+# EOT
+# EOF
+
+tee -a /etc/sysconfig/network << EOF
+NETWORKING=yes
+HOSTNAME=$NODE1_SB
+EOF
+
+
+
+# 5.5. Create Anaconda Kickstart for Minnowboard Turbot used in Network Install
+# Reference on "Disk 'sdb' given in clerapart command does not exist" troubleshooting:
+# https://access.redhat.com/discussions/746373
+# Reference: https://thornelabs.net/2014/02/03/hash-roots-password-in-rhel-and-centos-kickstart-profiles.html
+# Reference on sha512 hash password: http://geekcorner.sitedevelopments.net/2015/08/04/generate-sha512-password-with-centos-7fedora-7-rhel-7/
+# Reference on chroot in post install script: https://listman.redhat.com/archives/kickstart-list/2002-February/msg00100.html
+# Reference on using pssh: https://stackoverflow.com/questions/27718501/i-want-to-use-parallel-ssh-to-run-a-bash-script-on-multiple-servers-but-it-simp
+# Reference on pssh password: https://gist.github.com/nicwolff/7c113328412765eaf83e
+# Reference on pssh: https://blog.getreu.net/projects/ssh-cluster-administration/
+# Reference on creating a shell script with tee, then cat:
+INSTALLATION_TREE=centos7-install/
+PASSWORD=$(python -c 'import crypt; print(crypt.crypt("hadoop", crypt.mksalt(crypt.METHOD_SHA512)))')
+PSSH_PASSWD=hadoop
+tee -a /var/www/html/centos7-install/m-turbot-ks.cfg << EOF
+#version=DEVEL
+# System authorization information
+auth --enableshadow --passalgo=sha512
+# Use network installation
+url --url="http://$IPADDRESS/$INSTALLATION_TREE"
+# Use graphical install
+# graphical
+# Use text install
+text
+# Run the Setup Agent on first boot
+firstboot --enable
+# ignoredisk --only-use=sdb
+# Keyboard layouts
+keyboard --vckeymap=us --xlayouts='us'
+# System language
+lang en_US.UTF-8
+
+# Network information
+network  --bootproto=dhcp --device=enp3s0 --ipv6=auto --activate
+network  --hostname=localhost.localdomain
+
+# Root password
+rootpw --iscrypted $PASSWORD
+# System services
+services --disabled="chronyd"
+# System timezone
+timezone America/Los_Angeles --isUtc --nontp
+# System bootloader configuration
+bootloader --append=" crashkernel=auto" --location=mbr
+autopart --type=lvm
+# Partition clearing information
+clearpart --all
+
+# Reboot after installation is complete
+reboot
+
+%packages
+@^minimal
+@core
+kexec-tools
+
+%end
+
+%addon com_redhat_kdump --enable --reserve-mb='auto'
+
+%end
+
+%anaconda
+pwpolicy root --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+pwpolicy user --minlen=6 --minquality=1 --notstrict --nochanges --emptyok
+pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+%end
+
+# Post Installation Script for Installing Ambari
+%post
+#!/bin/bash
+CHECK_IP=$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+# Verify on node1-sb, if so, then install pssh
+case "$CHECK_IP" in
+  "$STATIC_IP_NODE1") printf "Setting up Node1-sb:\n"
+    printf "1. Preparing Environment....\n"
+    printf "Task 1: Installing pssh and sshpass....\n"
+    yum install -y epel-release
+    yum install -y pssh
+    yum install -y sshpass
+    # Create pssh_hosts file
+
+    printf "Task 2: Creating pssh-hosts file\n"
+    tee -a /etc/pssh-hosts << EOF
+    $STATIC_IP_NODE1
+    $STATIC_IP_NODE2
+    $STATIC_IP_NODE3
+    $STATIC_IP_NODE4
+    $STATIC_IP_NODE5
+    $STATIC_IP_NODE6
+    $STATIC_IP_NODE7
+    $STATIC_IP_NODE8
+    EOF
+
+    # Creating script that will be used to add hosts info to each host in cluster
+    printf "Task 3: Creating shell script to append ip map host across each node\n"
+    tee -a /append_hosts.sh << EOF
+    #!/bin/bash
+    cat << EOT >> /etc/hosts
+    $STATIC_IP_NODE1 $NODE1_SB
+    $STATIC_IP_NODE2 $NODE2_SB
+    $STATIC_IP_NODE3 $NODE3_SB
+    $STATIC_IP_NODE4 $NODE4_SB
+    $STATIC_IP_NODE5 $NODE5_SB
+    $STATIC_IP_NODE6 $NODE6-SB
+    $STATIC_IP_NODE7 $NODE7_SB
+    $STATIC_IP_NODE8 $NODE8_SB
+    EOT
+    EOF
+
+    printf "Task 4: Setting up Password-less SSH on Each Host\n"
+    # Run shell script on each host ip address provided in pssh-hosts file
+    # Appends map of ip to host on each node's hosts file
+
+    printf "Task 4.1: Editing /etc/hosts file on every host in cluster\n"
+    printf "to contain IP address and Fully Qualified Domain Name...\n"
+    sshpass -p "$PSSH_PASSWD" pssh -h /etc/pssh-hosts -x "-o StrictHostKeyChecking=no" -A -I < "/append_hosts.sh"
+
+    printf "Task 4.2: Creating public and private SSH keys on Ambari Server Host\n"
+    # Reference: https://stackoverflow.com/questions/10767488/automate-ssh-keygen-t-rsa-so-it-does-not-ask-for-a-passphrase
+    ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
+    # Add SSH Public Key to Authorized_keys file to each target host
+    printf "Task 4.3: Copy SSH Public Key into authorized_keys file\n"
+    cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+    # Create ~/.ssh folder on each host
+    printf "Task 4.4: Create ~/.ssh folder on each host\n"
+    sshpass -p "$PSSH_PASSWD" pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "mkdir ~/.ssh"
+
+    # Copy and Send id_rsa.pub and authorized_keys files to each host
+    # Reference: https://www.tecmint.com/copy-files-to-multiple-linux-servers/
+    printf "Task 4.5: Copy and Send _id_rsa.pub and authorized_keys files to each host\n"
+    sshpass -p "$PSSH_PASSWD" pscp.pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -Av ~/.ssh/id_rsa.pub ~/.ssh/
+    sshpass -p "$PSSH_PASSWD" pscp.pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -Av ~/.ssh/authorized_keys ~/.ssh/
+
+    printf "Task 4.6: Set permissions ~/.ssh and authorized_keys on each host\n"
+    sshpass -p "$PSSH_PASSWD" pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "chmod 700 ~/.ssh"
+    sshpass -p "$PSSH_PASSWD" pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "chmod 600 ~/.ssh/authorized_keys"
+
+    # Set Hostname for Node1
+    printf "Task 4.7: Permanently set hostname\n"
+    hostnamectl set-hostname $NODE1_SB
+
+    printf "Task 4.8: Appending FQDN to Network Config file\n"
+    tee -a /etc/sysconfig/network << EOF
+    NETWORKING=yes
+    HOSTNAME=$NODE1_SB
+    EOF
+
+    # Done setting password-less SSH
+    printf "Task 5: Enable NTP on each node in Cluster and Browser Host\n"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "yum install -y ntp"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl enable ntpd"
+
+    printf "Task 5.1: Enable CHRONY on each node in Cluster and Browser Host\n"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "yum install -y chrony"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl start chronyd"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl enable chronyd"
+
+    printf "Task 6: Disable iptables on each host for Ambari to communicate with them\n"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl disable firewalld"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "service firewalld stop"
+
+    printf "Task 7: Disable SELinux and PackageKit\n"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "setenforce 0"
+
+    # Check on install host (Ambari Server) if path to refresh-packagekit.conf
+    # exists, if not, then no need to disable it
+    if [ -e /etc/yum/pluginconf.d/refresh-packagekit.conf ]; then
+      printf "refresh-packagekit.conf exists\n";
+      DISABLED=0
+      perl -pi -e "s/(enabled)(.*=.*)([0-9]+)/\1\2$DISABLED/g" /etc/yum/pluginconf.d/refresh-packagekit.conf
+    else
+      printf "refresh-packagekit.conf is nonexistent\n";
+    fi
+
+    # Set umask to 022 since Ambari, HDP, HDF support that value
+    printf "Set unmask to 0022 since Ambari, HDP, HDF support that value\n"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "umask 0022"
+
+    # On Node1 Server Host, download Ambari Repo
+    prinf "Task 8: Downloading Ambari 2.7 Repo\n"
+    # Install wget on each node
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "yum install -y wget"
+
+    # Reference for Ambari Repo:
+    wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.7.0.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
+
+    # Reference for HDP3.0: https://docs.hortonworks.com/HDPDocuments/Ambari-2.7.0.0/bk_ambari-installation/content/hdp_30_repositories.html
+    wget -nv http://public-repo-1.hortonworks.com/HDP/centos7/3.x/updates/3.0.0.0/hdp.repo -O /etc/yum.repos.d/hdp.repo
+    # Confirm repository list has Ambari Repo
+    REPO_CONFIG=$(yum repolist)
+
+    #
+    HAS_AMBARI_REPO=$(echo $REPO_CONFIG | grep -oE '(^| )ambari-2.7.[0-9].[0-9]( |$)' | awk 'FNR == 1 {print $1}')
+    if [ "$HAS_AMBARI_REPO" = "ambari-2.7.0.0" ]; then
+      printf "Task 9: Repo List has Ambari Repo, Installing ambari-server\n"
+      yum install -y ambari-server
+
+      # automate ambari-server setup to accept all default values
+      printf "Setting up ambari-server\n"
+      ambari-server setup -s
+
+      printf "Starting Ambari\n"
+      yum install -y net-tools
+      ambari-server start
+      ambari-server status
+      # Now ambari UI should be reachable at: http://node1-sb.hortonworks.com:8080
+    else
+      printf "Repo List doesn't have Ambari Repo\n"
+    fi
+    ;;
+  "$STATIC_IP_NODE2") printf "Setting up Node2-sb:\n"
+    printf "Task 1: Permanently set hostname\n"
+    hostnamectl set-hostname $NODE2_SB
+    printf "Task 2: Appending FQDN to Network Config file\n"
+    tee -a /etc/sysconfig/network << EOF
+    NETWORKING=yes
+    HOSTNAME=$NODE2_SB
+    EOF
+    ;;
+  "$STATIC_IP_NODE3") printf "Setting up Node3-sb:\n"
+    printf "Task 1: Permanently set hostname\n"
+    hostnamectl set-hostname $NODE3_SB
+    printf "Task 2: Appending FQDN to Network Config file\n"
+    tee -a /etc/sysconfig/network << EOF
+    NETWORKING=yes
+    HOSTNAME=$NODE3_SB
+    EOF
+    ;;
+  "$STATIC_IP_NODE4") printf "Setting up Node4-sb:\n"
+    printf "Task 1: Permanently set hostname\n"
+    hostnamectl set-hostname $NODE4_SB
+    printf "Task 2: Appending FQDN to Network Config file\n"
+    tee -a /etc/sysconfig/network << EOF
+    NETWORKING=yes
+    HOSTNAME=$NODE4_SB
+    EOF
+    ;;
+  "$STATIC_IP_NODE5") printf "Setting up Node5-sb:\n"
+    printf "Task 1: Permanently set hostname\n"
+    hostnamectl set-hostname $NODE5_SB
+    printf "Task 2: Appending FQDN to Network Config file\n"
+    tee -a /etc/sysconfig/network << EOF
+    NETWORKING=yes
+    HOSTNAME=$NODE5_SB
+    EOF
+    ;;
+  "$STATIC_IP_NODE6") printf "Setting up Node6-sb:\n"
+    printf "Task 1: Permanently set hostname\n"
+    hostnamectl set-hostname $NODE6_SB
+    printf "Task 2: Appending FQDN to Network Config file\n"
+    tee -a /etc/sysconfig/network << EOF
+    NETWORKING=yes
+    HOSTNAME=$NODE6_SB
+    EOF
+    ;;
+  "$STATIC_IP_NODE7") printf "Setting up Node7-sb:\n"
+    printf "Task 1: Permanently set hostname\n"
+    hostnamectl set-hostname $NODE7_SB
+    printf "Task 2: Appending FQDN to Network Config file\n"
+    tee -a /etc/sysconfig/network << EOF
+    NETWORKING=yes
+    HOSTNAME=$NODE7_SB
+    EOF
+    ;;
+  "$STATIC_IP_NODE8") printf "Setting up Node8-sb:\n"
+    printf "Task 1: Permanently set hostname\n"
+    hostnamectl set-hostname $NODE8_SB
+    printf "Task 2: Appending FQDN to Network Config file\n"
+    tee -a /etc/sysconfig/network << EOF
+    NETWORKING=yes
+    HOSTNAME=$NODE8_SB
+    EOF
+    ;;
+  *)
+    printf "Automation applies to all nodes in the cluster\n"
+    ;;
+esac
+
+%end
+
+EOF
+chmod 777 /var/www/html/centos7-install/m-turbot-ks.cfg
 
 # 6. Add a configuration file named /var/lib/tftpboot/grub.cfg
 # grub.cfg consists of installation source, installation configuration
@@ -412,24 +726,27 @@ cd ~/
 # using inst.ks=host1/dir/ks.cfg, ours is inst.ks=<ip-addr>
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/sect-making-media-additional-sources
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/chap-anaconda-boot-options#sect-boot-options-installer
-mkdir Multi-Node-HDP-Cluster-Install/
-cp Multi-Node-HDP-Cluster-Install/m-turbot-ks.cfg /var/www/html/centos7-install/
-chmod 777 /var/www/html/centos7-install/m-turbot-ks.cfg
+# Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/sec-customizing_the_grub_2_configuration_file
+# How to add the option to auto select installing CentOS7 if user doesn't intervene after 10 seconds?
 KICKSTART_FILE=m-turbot-ks.cfg
-INSTALLATION_TREE=centos7-install/
 tee -a /var/lib/tftpboot/grub.cfg << EOF
-set timeout=60
+set timeout=5
 menuentry 'Install CentOS 7' {
-  linuxefi images/pxeboot/vmlinuz ip=dhcp inst.repo=http://$IPADDRESS/$INSTALLATION_TREE \
-  inst.ks=http://$IPADDRESS/$INSTALLATION_TREE/$KICKSTART_FILE
+  linuxefi images/pxeboot/vmlinuz ip=dhcp \
+  inst.repo=http://$IPADDRESS/$INSTALLATION_TREE \
+  inst.ks=http://$IPADDRESS/$INSTALLATION_TREE$KICKSTART_FILE
   initrdefi images/pxeboot/initrd.img
 }
 EOF
 
 # 7. Create a "subdirectory" to store boot image files within "/var/lib/tftpboot/" directory
-# and copy the boot image files to it, we use the directory "/var/lib/tftpboot/images/CentOS-7/"
-mkdir -p /var/lib/tftpboot/images/CentOS-7/
-cp /var/www/html/centos7-install/images/pxeboot/{vmlinuz,initrd.img} /var/lib/tftpboot/images/CentOS-7/
+# and copy the boot image files to it, we use the directory "/var/lib/tftpboot/images/pxeboot/"
+# mkdir -p /var/lib/tftpboot/images/CentOS-7/
+mkdir -p /var/lib/tftpboot/images/pxeboot/
+cp /var/www/html/centos7-install/images/pxeboot/{vmlinuz,initrd.img} /var/lib/tftpboot/images/pxeboot/
+chmod 777 /var/lib/tftpboot/images/pxeboot/{vmlinuz,initrd.img}
+# chmod 777 /var/lib/tftpboot/images/pxeboot/vmlinuz
+# chmod 777 /var/lib/tftpboot/images/pxeboot/initrd.img
 
 # Enable your tftp server, because default is disable, and start tftp server
 # vim /etc/xinetd.d/tftp
@@ -475,3 +792,5 @@ systemctl enable tftp
 # Troubleshooting: cat /var/log/messages, or tail -f /var/log/messages
 # dhcpd.conf message appears: 'DHCPINFORM from X.X.X.X via ethN: not authoritative for subnet X.X.X.X' appears in /var/log/messages file after configuring DHCP Server
 # then check: https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk92436
+
+# systemctl restart httpd.service tftp dhcpd
