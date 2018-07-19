@@ -417,21 +417,6 @@ cp -r boot/efi/EFI/centos/shim.efi /var/lib/tftpboot/
 
 cd ~/
 
-# Reference: https://unix.stackexchange.com/questions/77277/how-to-append-multiple-lines-to-a-file
-# tee -a /append_hosts.sh << EOF
-# #!/bin/bash
-# cat << EOT >> /etc/hosts
-# 10.10.2.11 node1-sb.hortonworks.com
-# EOT
-# EOF
-
-tee -a /etc/sysconfig/network << EOF
-NETWORKING=yes
-HOSTNAME=$NODE1_SB
-EOF
-
-
-
 # 5.5. Create Anaconda Kickstart for Minnowboard Turbot used in Network Install
 # Reference on "Disk 'sdb' given in clerapart command does not exist" troubleshooting:
 # https://access.redhat.com/discussions/746373
