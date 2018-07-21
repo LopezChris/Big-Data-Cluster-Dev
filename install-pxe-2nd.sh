@@ -1,5 +1,6 @@
 #!/bin/bash
 
+printf "Task 1: Installing Necessary Tools for PXE Server....\n"
 yum install -y wget git net-tools
 
 ##
@@ -36,6 +37,7 @@ yum install -y wget git net-tools
 #
 
 # 1. Install httpd package
+printf "Task 1: Installing HTTPD Package on PXE Server....\n"
 yum install -y httpd
 # 2. Copy full CentOS7 binary DVD ISO image to HTTP server
 wget http://repo1.dal.innoscale.net/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso
@@ -110,6 +112,7 @@ firewall-cmd --reload
 #
 
 # 1. Install TFTP-server package:
+printf "Task 2: Installing TFTP, XINETD Package on PXE Server....\n"
 yum install -y tftp-server tftp xinetd
 # 2. Allow incoming connections to the TFTP service in the firewall:
 firewall-cmd --permanent --add-service=tftp
@@ -118,6 +121,7 @@ firewall-cmd --reload
 # Reference: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/networking_guide/ch-dhcp_servers
 # 3.1: Configuring a DHCP Server
 # 1. Install DHCP Server package
+printf "Task 3: Installing DHCP Package on PXE Server....\n"
 yum install -y dhcp
 # Installing dhcp creates a file, /etc/dhcp/dhcpd.conf, which is an empty config file
 # Edit DHCP configuration file to declare options for client systems
@@ -188,10 +192,17 @@ echo $((${1}%256))
 IPADDRESS=$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
 printf "Server IP Address: $IPADDRESS\n"
 
+# Find Interface Name, ex: enp0s3
+# kernel lists them by name, we want the one related to ethernet
+# Reference: https://unix.stackexchange.com/questions/125400/how-can-i-find-available-network-interfaces
+INTERFACE_NAME=$(ls /sys/class/net/ | grep -o "en.*")
+printf "Network Interface Name: $INTERFACE_NAME\n"
+
 # Find Subnetmask
 # Reference to find SUBNETMASK: https://www.cyberciti.biz/faq/howto-find-subnet-mask-on-unix/
 # Reference on awk: https://stackoverflow.com/questions/1506521/select-row-and-element-in-awk
 SUBNETMASK=$(ifconfig $INTERFACE_NAME | awk 'FNR == 2 {print $4}')
+# SUBNETMASK=255.255.255.0
 printf "Server Subnetmask Address: $SUBNETMASK\n"
 
 # Find Network IP ID = IPADRESS - SUBNETMASK
@@ -228,41 +239,53 @@ printf "Network Range IP Base: $NETWORK_RANGE_IP_BASE\n"
 IP_ADDRESS_NUM_TO_ADD_BY=$(atoi 0.0.0.1)
 STATIC_IP_NUM_NODE1=$(( $NETWORK_RANGE_IP_BASE_NUM + $IP_ADDRESS_NUM_TO_ADD_BY ))
 STATIC_IP_NODE1=$(itoa $STATIC_IP_NUM_NODE1)
+# Static IP Addresses were allocated by IT at 10.10.22.0/24
+# STATIC_IP_NODE1=10.10.22.1
 printf "Static IP Node1: $STATIC_IP_NODE1\n"
 # Node2 Static IP
 IP_ADDRESS_NUM_TO_ADD_BY=$(atoi 0.0.0.2)
 STATIC_IP_NUM_NODE2=$(( $NETWORK_RANGE_IP_BASE_NUM + $IP_ADDRESS_NUM_TO_ADD_BY ))
 STATIC_IP_NODE2=$(itoa $STATIC_IP_NUM_NODE2)
+# Static IP Addresses were allocated by IT at 10.10.22.0/24
+# STATIC_IP_NODE2=10.10.22.2
 printf "Static IP Node2: $STATIC_IP_NODE2\n"
 # Node3 Static IP
 IP_ADDRESS_NUM_TO_ADD_BY=$(atoi 0.0.0.3)
 STATIC_IP_NUM_NODE3=$(( $NETWORK_RANGE_IP_BASE_NUM + $IP_ADDRESS_NUM_TO_ADD_BY ))
 STATIC_IP_NODE3=$(itoa $STATIC_IP_NUM_NODE3)
+# Static IP Addresses were allocated by IT at 10.10.22.0/24
+# STATIC_IP_NODE3=10.10.22.3
 printf "Static IP Node3: $STATIC_IP_NODE3\n"
 # Node4 Static IP
 IP_ADDRESS_NUM_TO_ADD_BY=$(atoi 0.0.0.4)
 STATIC_IP_NUM_NODE4=$(( $NETWORK_RANGE_IP_BASE_NUM + $IP_ADDRESS_NUM_TO_ADD_BY ))
 STATIC_IP_NODE4=$(itoa $STATIC_IP_NUM_NODE4)
+# Static IP Addresses were allocated by IT at 10.10.22.0/24
+# STATIC_IP_NODE4=10.10.22.4
 printf "Static IP Node4: $STATIC_IP_NODE4\n"
 # Node5 Static IP
 IP_ADDRESS_NUM_TO_ADD_BY=$(atoi 0.0.0.5)
 STATIC_IP_NUM_NODE5=$(( $NETWORK_RANGE_IP_BASE_NUM + $IP_ADDRESS_NUM_TO_ADD_BY ))
 STATIC_IP_NODE5=$(itoa $STATIC_IP_NUM_NODE5)
+# STATIC_IP_NODE5=10.10.22.5
 printf "Static IP Node5: $STATIC_IP_NODE5\n"
 # Node6 Static IP
 IP_ADDRESS_NUM_TO_ADD_BY=$(atoi 0.0.0.6)
 STATIC_IP_NUM_NODE6=$(( $NETWORK_RANGE_IP_BASE_NUM + $IP_ADDRESS_NUM_TO_ADD_BY ))
 STATIC_IP_NODE6=$(itoa $STATIC_IP_NUM_NODE6)
+# STATIC_IP_NODE6=10.10.22.6
 printf "Static IP Node6: $STATIC_IP_NODE6\n"
 # Node7 Static IP
 IP_ADDRESS_NUM_TO_ADD_BY=$(atoi 0.0.0.7)
 STATIC_IP_NUM_NODE7=$(( $NETWORK_RANGE_IP_BASE_NUM + $IP_ADDRESS_NUM_TO_ADD_BY ))
 STATIC_IP_NODE7=$(itoa $STATIC_IP_NUM_NODE7)
+# STATIC_IP_NODE7=10.10.22.7
 printf "Static IP Node7: $STATIC_IP_NODE7\n"
 # Node8 Static IP
 IP_ADDRESS_NUM_TO_ADD_BY=$(atoi 0.0.0.8)
 STATIC_IP_NUM_NODE8=$(( $NETWORK_RANGE_IP_BASE_NUM + $IP_ADDRESS_NUM_TO_ADD_BY ))
 STATIC_IP_NODE8=$(itoa $STATIC_IP_NUM_NODE8)
+# STATIC_IP_NODE8=10.10.22.8
 printf "Static IP Node8: $STATIC_IP_NODE8\n"
 
 NODE1_SB=node1-sb.hortonworks.com
@@ -274,12 +297,6 @@ NODE6_SB=node6-sb.hortonworks.com
 NODE7_SB=node7-sb.hortonworks.com
 NODE8_SB=node8-sb.hortonworks.com
 
-# Find Interface Name, ex: enp0s3
-# kernel lists them by name, we want the one related to ethernet
-# Reference: https://unix.stackexchange.com/questions/125400/how-can-i-find-available-network-interfaces
-INTERFACE_NAME=$(ls /sys/class/net/ | grep -o "en.*")
-printf "Network Interface Name: $INTERFACE_NAME\n"
-
 # Find Default Gateway IP in Linux (Unix/FreeBSD/OpenBSD/macOS)
 # Gateway - network point acts as entrance to another network
 # - associated with both router, knows where to direct packet of data
@@ -288,6 +305,8 @@ printf "Network Interface Name: $INTERFACE_NAME\n"
 # Gateway node in network for enterprise is acting as Proxy server and a firewall server
 # Reference: https://www.cyberciti.biz/faq/how-to-find-gateway-ip-address/
 GATEWAY_ROUTER_IP=$(netstat -r -n | awk 'FNR == 3 {print $2}')
+# GATEWAY_ROUTER_IP was assigned by IT
+# GATEWAY_ROUTER_IP=10.10.22.254
 printf "Gateway Router IP: $GATEWAY_ROUTER_IP\n"
 
 # Find DNS1 Server IP Address being used
@@ -295,8 +314,8 @@ printf "Gateway Router IP: $GATEWAY_ROUTER_IP\n"
 DNS1_IP=$(nmcli dev show | grep "DNS\[1\]" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
 printf "DNS1 IP Address: $DNS1_IP\n"
 
-INIT_BOOT_FILENAME=EFI/BOOT/$(ls /var/www/html/centos7-install/EFI/BOOT/ | grep -o grubx64.*)
-printf "Initial Boot Filename: $INIT_BOOT_FILENAME\n"
+# INIT_BOOT_FILENAME=EFI/BOOT/$(ls /var/www/html/centos7-install/EFI/BOOT/ | grep -o grubx64.*)
+# printf "Initial Boot Filename: $INIT_BOOT_FILENAME\n"
 
 cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
 
@@ -337,11 +356,11 @@ subnet $NETWORK_IP_ID netmask $SUBNETMASK {
 
         # The name of the initial boot file which is to be loaded by the client
         # Minnowboard is 00:08:A2:09.*.* architecture, so we go with x64bit
-        # if option architecture-type = 00:07 {
-        #    filename "shim.efi";
-        # } else {
+        if option architecture-type = 00:07 {
+           filename "shim.efi";
+        } else {
           filename "grubx64.efi";
-        # }
+        }
     }
 
 }
@@ -414,10 +433,82 @@ rpm2cpio $SHIM_EFI_PACKAGE | cpio -dimv
 # 5. Copy EFI boot images from your directory:
 cp -r boot/efi/EFI/centos/grubx64.efi /var/lib/tftpboot/
 cp -r boot/efi/EFI/centos/shim.efi /var/lib/tftpboot/
+# cp -r boot/efi/EFI/centos/shimx64-centos.efi /var/lib/tftpboot/
 
 cd ~/
 
-# 5.5. Create Anaconda Kickstart for Minnowboard Turbot used in Network Install
+# Download RPM files, place on HTTP Server in centos7-install/Packages/ for use in Kickstart %packages section
+# Reference: https://centos.pkgs.org/7/epel-x86_64/epel-release-7-11.noarch.rpm.html
+# Reference: https://centos.pkgs.org/7/epel-x86_64/pssh-2.3.1-5.el7.noarch.rpm.html
+# Reference: https://centos.pkgs.org/7/centos-extras-x86_64/sshpass-1.06-2.el7.x86_64.rpm.html
+# Reference: https://centos.pkgs.org/7/centos-x86_64/ntp-4.2.6p5-28.el7.centos.x86_64.rpm.html
+# Reference: https://centos.pkgs.org/7/centos-x86_64/chrony-3.2-2.el7.x86_64.rpm.html
+# Reference: https://centos.pkgs.org/7/centos-x86_64/wget-1.14-15.el7_4.1.x86_64.rpm.html
+# Reference: https://centos.pkgs.org/7/centos-x86_64/net-tools-2.0-0.22.20131004git.el7.x86_64.rpm.html
+mkdir -p /var/www/html/centos7-install/Extra-Packages
+wget http://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-11.noarch.rpm -O /var/www/html/centos7-install/Extra-Packages/epel-release-7-11.noarch.rpm
+wget http://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/p/pssh-2.3.1-5.el7.noarch.rpm -O /var/www/html/centos7-install/Extra-Packages/pssh-2.3.1-5.el7.noarch.rpm
+wget http://mirror.centos.org/centos/7/extras/x86_64/Packages/sshpass-1.06-2.el7.x86_64.rpm -O /var/www/html/centos7-install/Extra-Packages/sshpass-1.06-2.el7.x86_64.rpm
+wget http://mirror.centos.org/centos/7/os/x86_64/Packages/ntp-4.2.6p5-28.el7.centos.x86_64.rpm -O /var/www/html/centos7-install/Extra-Packages/ntp-4.2.6p5-28.el7.centos.x86_64.rpm
+wget http://mirror.centos.org/centos/7/os/x86_64/Packages/chrony-3.2-2.el7.x86_64.rpm -O /var/www/html/centos7-install/Extra-Packages/chrony-3.2-2.el7.x86_64.rpm
+wget http://mirror.centos.org/centos/7/os/x86_64/Packages/wget-1.14-15.el7_4.1.x86_64.rpm -O /var/www/html/centos7-install/Extra-Packages/wget-1.14-15.el7_4.1.x86_64.rpm
+wget http://mirror.centos.org/centos/7/os/x86_64/Packages/net-tools-2.0-0.22.20131004git.el7.x86_64.rpm -O /var/www/html/centos7-install/Extra-Packages/net-tools-2.0-0.22.20131004git.el7.x86_64.rpm
+
+# Add TAR files for Ambari and HDP on PXE, so Ambari node can perform a local install
+# Download  files, place on HTTP Server in centos7-install/localrepo/ for use in "Kickstart post install"
+mkdir -p /var/www/html/centos7-install/localrepo/
+wget http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.7.0.0/ambari-2.7.0.0-centos7.tar.gz && \
+tar xf ambari-2.7.0.0-centos7.tar.gz -C /var/www/html/centos7-install/localrepo/
+
+mkdir -p /var/www/html/centos7-install/localrepo/hdp/
+wget http://public-repo-1.hortonworks.com/HDP/centos7/3.x/updates/3.0.0.0/HDP-3.0.0.0-centos7-rpm.tar.gz && \
+tar xf HDP-3.0.0.0-centos7-rpm.tar.gz -C /var/www/html/centos7-install/localrepo/hdp/
+
+wget http://public-repo-1.hortonworks.com/HDP-UTILS-1.1.0.22/repos/centos7/HDP-UTILS-1.1.0.22-centos7.tar.gz && \
+tar xf HDP-UTILS-1.1.0.22-centos7.tar.gz -C /var/www/html/centos7-install/localrepo/hdp/
+
+wget http://public-repo-1.hortonworks.com/HDP-GPL/centos7/3.x/updates/3.0.0.0/HDP-GPL-3.0.0.0-centos7-gpl.tar.gz && \
+tar xf HDP-GPL-3.0.0.0-centos7-gpl.tar.gz -C /var/www/html/centos7-install/localrepo/hdp/
+
+# Base URLS:
+# Ambari Base URL: http://10.10.3.144/centos7-install/localrepo/ambari/centos7/
+# HDP Base URL: http://10.10.3.144/centos7-install/localrepo/hdp/HDP/centos7/3.0.0.0-1634/
+# HDP-UTILS Base URL: http://10.10.3.144/centos7-install/localrepo/hdp/HDP-UTILS/centos7/1.1.0.22/
+# HDP-GPL Base URL: http://10.10.3.144/centos7-install/localrepo/hdp/HDP-GPL/centos7/3.0.0.0-1634/
+AMBARI_BASE_URL="http:\/\/$IPADDRESS\/centos7-install\/localrepo\/ambari\/centos7\/"
+HDP_BASE_URL="http:\/\/$IPADDRESS\/centos7-install\/localrepo\/hdp\/HDP\/centos7\/3.0.0.0-1634\/"
+HDP_GPL_BASE_URL="http:\/\/$IPADDRESS\/centos7-install\/localrepo\/hdp\/HDP-GPL\/centos7\/3.0.0.0-1634\/"
+HDP_UTIL_BASE_URL="http:\/\/$IPADDRESS\/centos7-install\/localrepo\/hdp\/HDP-UTILS\/centos7\/1.1.0.22\/"
+# tee -a /var/www/html/centos7-install/localrepo/base-urls << EOF
+# Ambari Base URL: http://$IPADDRESS/centos7-install/localrepo/ambari/centos7/
+# HDP Base URL: http://$IPADDRESS/centos7-install/localrepo/hdp/HDP/centos7/3.0.0.0-1634/
+# HDP-UTILS Base URL: http://$IPADDRESS/centos7-install/localrepo/hdp/HDP-UTILS/centos7/1.1.0.22/
+# HDP-GPL Base URL: http://$IPADDRESS/centos7-install/localrepo/hdp/HDP-GPL/centos7/3.0.0.0-1634/
+# EOF
+
+# 1. Download the ambari.repo file from the public repository
+wget http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.7.0.0/ambari.repo -O /var/www/html/centos7-install/localrepo/ambari.repo
+# 2. Replace the Ambari Base URL baseurl obtained when setting up your local repository
+perl -pi -e "s/baseurl=.*/baseurl=$AMBARI_BASE_URL/g" /var/www/html/centos7-install/localrepo/ambari.repo
+# 3. Disable gpgcheck setting it to 0
+perl -pi -e "s/gpgcheck=1/gpgcheck=0/g" /var/www/html/centos7-install/localrepo/ambari.repo
+
+# 1. Download the hdp.repo file from public repo
+wget http://public-repo-1.hortonworks.com/HDP/centos7/3.x/updates/3.0.0.0/hdp.repo -O /var/www/html/centos7-install/localrepo/hdp.repo
+# 2. Replace the HDP Base URL baseurl obtained when setting up your local repository
+perl -pi -e "s/baseurl=http.*\/HDP\/.*/baseurl=$HDP_BASE_URL/g" /var/www/html/centos7-install/localrepo/hdp.repo
+perl -pi -e "s/baseurl=http.*\/HDP-UTILS-1.1.0.22\/.*/baseurl=$HDP_UTIL_BASE_URL/g" /var/www/html/centos7-install/localrepo/hdp.repo
+# 3. Disable gpgcheck setting it to 0
+perl -pi -e "s/gpgcheck=1/gpgcheck=0/g" /var/www/html/centos7-install/localrepo/hdp.repo
+
+# 1. Download the hdp.gpl.repo file from public repo
+wget http://public-repo-1.hortonworks.com/HDP-GPL/centos7/3.x/updates/3.0.0.0/hdp.gpl.repo -O /var/www/html/centos7-install/localrepo/hdp.gpl.repo
+# 2. Replace the HDP-GPL Base URL baseurl obtained when setting up your local repository
+perl -pi -e "s/baseurl=.*/baseurl=$HDP_GPL_BASE_URL/g" /var/www/html/centos7-install/localrepo/hdp.gpl.repo
+# 3. Disable gpgcheck setting it to 0
+perl -pi -e "s/gpgcheck=1/gpgcheck=0/g" /var/www/html/centos7-install/localrepo/hdp.gpl.repo
+
+# 5.5. Create "Anaconda Kickstart" for Minnowboard Turbot used in Network Install
 # Reference on "Disk 'sdb' given in clerapart command does not exist" troubleshooting:
 # https://access.redhat.com/discussions/746373
 # Reference: https://thornelabs.net/2014/02/03/hash-roots-password-in-rhel-and-centos-kickstart-profiles.html
@@ -427,6 +518,8 @@ cd ~/
 # Reference on pssh password: https://gist.github.com/nicwolff/7c113328412765eaf83e
 # Reference on pssh: https://blog.getreu.net/projects/ssh-cluster-administration/
 # Reference on creating a shell script with tee, then cat:
+# Make sure to download the RPM package on the PXE Server, then have the nodes
+# download it from PXE server since they have access, and install it
 INSTALLATION_TREE=centos7-install/
 PASSWORD=$(python -c 'import crypt; print(crypt.crypt("hadoop", crypt.mksalt(crypt.METHOD_SHA512)))')
 PSSH_PASSWD=hadoop
@@ -465,12 +558,35 @@ autopart --type=lvm
 clearpart --all
 
 # Reboot after installation is complete
-reboot
+# reboot
+
+# Add an Repository for extra packages not included in CentOS ISO RPMS
+repo --name=Extra-Packages --baseurl=http://$IPADDRESS/centos7-install/Extra-Packages/ --install
+
+# Add an Ambari Repository
+repo --name=ambari --baseurl=http://$IPADDRESS/centos7-install/localrepo/ambari/centos7/ --install
+
+# Add an HDP Repository
+repo --name=hdp --baseurl=http://$IPADDRESS/centos7-install/localrepo/hdp/HDP/centos7/3.0.0.0-1634/ --install
+
+# Add an HDP-GPL Repository
+repo --name=hdp-gpl --baseurl=http://$IPADDRESS/centos7-install/localrepo/hdp/HDP-GPL/centos7/3.0.0.0-1634/ --install
 
 %packages
 @^minimal
 @core
 kexec-tools
+# epel-release
+# pssh
+# sshpass
+# ntp
+# chrony
+# wget
+# net-tools
+# ambari
+# hdp
+# hdp-util
+# hdp-gpl
 
 %end
 
@@ -484,47 +600,45 @@ pwpolicy user --minlen=6 --minquality=1 --notstrict --nochanges --emptyok
 pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
 %end
 
-# Post Installation Script for Installing Ambari
-%post
-#!/bin/bash
-CHECK_IP=$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+# Post Installation Script
+%post --log=/root/m-turbot-ks-post.log
+
+# Reference: https://superuser.com/questions/1163676/how-to-echo-a-line-of-bash-to-file-without-executing
+CHECK_IP=\$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+echo "CHECK_IP = \$CHECK_IP"
 # Verify on node1-sb, if so, then install pssh
-case "$CHECK_IP" in
+case "\$CHECK_IP" in
   "$STATIC_IP_NODE1") printf "Setting up Node1-sb:\n"
     printf "1. Preparing Environment....\n"
-    printf "Task 1: Installing pssh and sshpass....\n"
-    yum install -y epel-release
-    yum install -y pssh
-    yum install -y sshpass
+    # printf "Task 1: Installing pssh and sshpass....\n"
+    # yum install -y epel-release
+    # yum install -y pssh
+    # yum install -y sshpass
     # Create pssh_hosts file
 
     printf "Task 2: Creating pssh-hosts file\n"
-    tee -a /etc/pssh-hosts << EOF
-    $STATIC_IP_NODE1
-    $STATIC_IP_NODE2
-    $STATIC_IP_NODE3
-    $STATIC_IP_NODE4
-    $STATIC_IP_NODE5
-    $STATIC_IP_NODE6
-    $STATIC_IP_NODE7
-    $STATIC_IP_NODE8
-    EOF
+    echo "$STATIC_IP_NODE1" | tee -a /etc/pssh-hosts
+    echo "$STATIC_IP_NODE2" | tee -a /etc/pssh-hosts
+    echo "$STATIC_IP_NODE3" | tee -a /etc/pssh-hosts
+    echo "$STATIC_IP_NODE4" | tee -a /etc/pssh-hosts
+    echo "$STATIC_IP_NODE5" | tee -a /etc/pssh-hosts
+    echo "$STATIC_IP_NODE6" | tee -a /etc/pssh-hosts
+    echo "$STATIC_IP_NODE7" | tee -a /etc/pssh-hosts
+    echo "$STATIC_IP_NODE8" | tee -a /etc/pssh-hosts
 
     # Creating script that will be used to add hosts info to each host in cluster
     printf "Task 3: Creating shell script to append ip map host across each node\n"
-    tee -a /append_hosts.sh << EOF
-    #!/bin/bash
-    cat << EOT >> /etc/hosts
-    $STATIC_IP_NODE1 $NODE1_SB
-    $STATIC_IP_NODE2 $NODE2_SB
-    $STATIC_IP_NODE3 $NODE3_SB
-    $STATIC_IP_NODE4 $NODE4_SB
-    $STATIC_IP_NODE5 $NODE5_SB
-    $STATIC_IP_NODE6 $NODE6-SB
-    $STATIC_IP_NODE7 $NODE7_SB
-    $STATIC_IP_NODE8 $NODE8_SB
-    EOT
-    EOF
+    echo "#!/bin/bash" | tee -a /append_hosts.sh
+    echo "cat << EOF >> /etc/hosts" | tee -a /append_hosts.sh
+    echo "$STATIC_IP_NODE1 $NODE1_SB" | tee -a /append_hosts.sh
+    echo "$STATIC_IP_NODE2 $NODE2_SB" | tee -a /append_hosts.sh
+    echo "$STATIC_IP_NODE3 $NODE3_SB" | tee -a /append_hosts.sh
+    echo "$STATIC_IP_NODE4 $NODE4_SB" | tee -a /append_hosts.sh
+    echo "$STATIC_IP_NODE5 $NODE5_SB" | tee -a /append_hosts.sh
+    echo "$STATIC_IP_NODE6 $NODE6_SB" | tee -a /append_hosts.sh
+    echo "$STATIC_IP_NODE7 $NODE7_SB" | tee -a /append_hosts.sh
+    echo "$STATIC_IP_NODE8 $NODE8_SB" | tee -a /append_hosts.sh
+    echo "EOF" | tee -a /append_hosts.sh
 
     printf "Task 4: Setting up Password-less SSH on Each Host\n"
     # Run shell script on each host ip address provided in pssh-hosts file
@@ -560,24 +674,22 @@ case "$CHECK_IP" in
     hostnamectl set-hostname $NODE1_SB
 
     printf "Task 4.8: Appending FQDN to Network Config file\n"
-    tee -a /etc/sysconfig/network << EOF
-    NETWORKING=yes
-    HOSTNAME=$NODE1_SB
-    EOF
+    echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
+    echo "HOSTNAME=$NODE1_SB" | tee -a /etc/sysconfig/network
 
     # Done setting password-less SSH
     printf "Task 5: Enable NTP on each node in Cluster and Browser Host\n"
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "yum install -y ntp"
+    # pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "yum install -y ntp"
     pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl enable ntpd"
 
     printf "Task 5.1: Enable CHRONY on each node in Cluster and Browser Host\n"
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "yum install -y chrony"
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl start chronyd"
+    # pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "yum install -y chrony"
+    # pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl start chronyd"
     pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl enable chronyd"
 
     printf "Task 6: Disable iptables on each host for Ambari to communicate with them\n"
     pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl disable firewalld"
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "service firewalld stop"
+    # pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "service firewalld stop"
 
     printf "Task 7: Disable SELinux and PackageKit\n"
     pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "setenforce 0"
@@ -587,7 +699,7 @@ case "$CHECK_IP" in
     if [ -e /etc/yum/pluginconf.d/refresh-packagekit.conf ]; then
       printf "refresh-packagekit.conf exists\n";
       DISABLED=0
-      perl -pi -e "s/(enabled)(.*=.*)([0-9]+)/\1\2$DISABLED/g" /etc/yum/pluginconf.d/refresh-packagekit.conf
+      perl -pi -e "s/(enabled)(.*=.*)([0-9]+)/\1\2\$DISABLED/g" /etc/yum/pluginconf.d/refresh-packagekit.conf
     else
       printf "refresh-packagekit.conf is nonexistent\n";
     fi
@@ -599,28 +711,36 @@ case "$CHECK_IP" in
     # On Node1 Server Host, download Ambari Repo
     prinf "Task 8: Downloading Ambari 2.7 Repo\n"
     # Install wget on each node
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "yum install -y wget"
+    # pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "yum install -y wget"
 
-    # Reference for Ambari Repo:
-    wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.7.0.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
+    # Download Ambari Repo, yum install ambari-server should work cause it is local
+    # 4. Place the ambari.repo file on the Ambari Server host
+    # wget http://$IPADDRESS/centos7-install/localrepo/ambari.repo -O /etc/yum.repos.d/ambari.repo
+    # 5. Edit the priorities.conf file to add the following values
+    tee -a /etc/yum/pluginconf.d/priorities.conf << EOF
+    [main]
+    enabled=1
+    gpgcheck=0
+    EOF
 
     # Reference for HDP3.0: https://docs.hortonworks.com/HDPDocuments/Ambari-2.7.0.0/bk_ambari-installation/content/hdp_30_repositories.html
-    wget -nv http://public-repo-1.hortonworks.com/HDP/centos7/3.x/updates/3.0.0.0/hdp.repo -O /etc/yum.repos.d/hdp.repo
+    # curl http://$IPADDRESS/centos7-install/repodata/hdp.repo -o /etc/yum.repos.d/hdp.repo
+
     # Confirm repository list has Ambari Repo
-    REPO_CONFIG=$(yum repolist)
+    REPO_CONFIG=\$(yum repolist)
 
     #
-    HAS_AMBARI_REPO=$(echo $REPO_CONFIG | grep -oE '(^| )ambari-2.7.[0-9].[0-9]( |$)' | awk 'FNR == 1 {print $1}')
-    if [ "$HAS_AMBARI_REPO" = "ambari-2.7.0.0" ]; then
+    HAS_AMBARI_REPO=\$(echo \$REPO_CONFIG | grep -oE '(^| )ambari-2.7.[0-9].[0-9]( |$)' | awk 'FNR == 1 {print $1}')
+    if [ "\$HAS_AMBARI_REPO" = "ambari-2.7.0.0" ]; then
       printf "Task 9: Repo List has Ambari Repo, Installing ambari-server\n"
-      yum install -y ambari-server
+      # yum localinstall -y ambari-server
 
       # automate ambari-server setup to accept all default values
       printf "Setting up ambari-server\n"
       ambari-server setup -s
 
       printf "Starting Ambari\n"
-      yum install -y net-tools
+      # yum install -y net-tools
       ambari-server start
       ambari-server status
       # Now ambari UI should be reachable at: http://node1-sb.hortonworks.com:8080
@@ -632,64 +752,51 @@ case "$CHECK_IP" in
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE2_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
-    tee -a /etc/sysconfig/network << EOF
-    NETWORKING=yes
-    HOSTNAME=$NODE2_SB
-    EOF
+
+    echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
+    echo "HOSTNAME=$NODE2_SB" | tee -a /etc/sysconfig/network
     ;;
   "$STATIC_IP_NODE3") printf "Setting up Node3-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE3_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
-    tee -a /etc/sysconfig/network << EOF
-    NETWORKING=yes
-    HOSTNAME=$NODE3_SB
-    EOF
+    echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
+    echo "HOSTNAME=$NODE3_SB" | tee -a /etc/sysconfig/network
     ;;
   "$STATIC_IP_NODE4") printf "Setting up Node4-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE4_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
-    tee -a /etc/sysconfig/network << EOF
-    NETWORKING=yes
-    HOSTNAME=$NODE4_SB
-    EOF
+    echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
+    echo "HOSTNAME=$NODE4_SB" | tee -a /etc/sysconfig/network
     ;;
   "$STATIC_IP_NODE5") printf "Setting up Node5-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE5_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
-    tee -a /etc/sysconfig/network << EOF
-    NETWORKING=yes
-    HOSTNAME=$NODE5_SB
-    EOF
+    echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
+    echo "HOSTNAME=$NODE5_SB" | tee -a /etc/sysconfig/network
     ;;
   "$STATIC_IP_NODE6") printf "Setting up Node6-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE6_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
-    tee -a /etc/sysconfig/network << EOF
-    NETWORKING=yes
-    HOSTNAME=$NODE6_SB
-    EOF
+    echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
+    echo "HOSTNAME=$NODE6_SB" | tee -a /etc/sysconfig/network
     ;;
   "$STATIC_IP_NODE7") printf "Setting up Node7-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE7_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
-    tee -a /etc/sysconfig/network << EOF
-    NETWORKING=yes
-    HOSTNAME=$NODE7_SB
-    EOF
+    echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
+    echo "HOSTNAME=$NODE7_SB" | tee -a /etc/sysconfig/network
     ;;
   "$STATIC_IP_NODE8") printf "Setting up Node8-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE8_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
-    tee -a /etc/sysconfig/network << EOF
-    NETWORKING=yes
-    HOSTNAME=$NODE8_SB
-    EOF
+    echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
+    echo "HOSTNAME=$NODE8_SB" | tee -a /etc/sysconfig/network
     ;;
   *)
     printf "Automation applies to all nodes in the cluster\n"
@@ -700,6 +807,7 @@ esac
 
 EOF
 chmod 777 /var/www/html/centos7-install/m-turbot-ks.cfg
+
 
 # 6. Add a configuration file named /var/lib/tftpboot/grub.cfg
 # grub.cfg consists of installation source, installation configuration
