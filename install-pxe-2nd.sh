@@ -517,6 +517,8 @@ perl -pi -e "s/gpgcheck=1/gpgcheck=0/g" /var/www/html/centos7-install/localrepo/
 # Reference on using pssh: https://stackoverflow.com/questions/27718501/i-want-to-use-parallel-ssh-to-run-a-bash-script-on-multiple-servers-but-it-simp
 # Reference on pssh password: https://gist.github.com/nicwolff/7c113328412765eaf83e
 # Reference on pssh: https://blog.getreu.net/projects/ssh-cluster-administration/
+# Reference on kickstart: https://marclop.svbtle.com/creating-an-automated-centos-7-install-via-kickstart-file
+# Reference on kickstart: http://www.informit.com/articles/article.aspx?p=1157197&seqNum=4
 # Reference on creating a shell script with tee, then cat:
 # Make sure to download the RPM package on the PXE Server, then have the nodes
 # download it from PXE server since they have access, and install it
@@ -560,29 +562,27 @@ clearpart --all
 # Reboot after installation is complete
 # reboot
 
-# Add an Repository for extra packages not included in CentOS ISO RPMS
-repo --name=Extra-Packages --baseurl=http://$IPADDRESS/centos7-install/Extra-Packages/ --install
+# Add CentOS7 Repository
+# repo --name=centos7 --baseurl=http://mirror.centos.org/centos/7/os/x86_64/
 
-# Add an Ambari Repository
-repo --name=ambari --baseurl=http://$IPADDRESS/centos7-install/localrepo/ambari/centos7/ --install
+# Add CentOS7 EXTRAS (includes SSHPASS) Repository
+repo --name=extras --baseurl=http://mirror.centos.org/centos/7/extras/x86_64/
 
-# Add an HDP Repository
-repo --name=hdp --baseurl=http://$IPADDRESS/centos7-install/localrepo/hdp/HDP/centos7/3.0.0.0-1634/ --install
-
-# Add an HDP-GPL Repository
-repo --name=hdp-gpl --baseurl=http://$IPADDRESS/centos7-install/localrepo/hdp/HDP-GPL/centos7/3.0.0.0-1634/ --install
+# Add EPEL (includes pssh) Repository
+repo --name=epel-release --baseurl=http://dl.fedoraproject.org/pub/epel/7/x86_64/
 
 %packages
 @^minimal
 @core
 kexec-tools
-# epel-release
-# pssh
-# sshpass
-# ntp
-# chrony
-# wget
-# net-tools
+pssh
+sshpass
+ntp
+chrony
+wget
+net-tools
+epel-release
+
 # ambari
 # hdp
 # hdp-util
@@ -715,7 +715,7 @@ case "\$CHECK_IP" in
 
     # Download Ambari Repo, yum install ambari-server should work cause it is local
     # 4. Place the ambari.repo file on the Ambari Server host
-    # wget http://$IPADDRESS/centos7-install/localrepo/ambari.repo -O /etc/yum.repos.d/ambari.repo
+    wget http://$IPADDRESS/centos7-install/localrepo/ambari.repo -O /etc/yum.repos.d/ambari.repo
     # 5. Edit the priorities.conf file to add the following values
     tee -a /etc/yum/pluginconf.d/priorities.conf << EOF
     [main]
@@ -724,7 +724,7 @@ case "\$CHECK_IP" in
     EOF
 
     # Reference for HDP3.0: https://docs.hortonworks.com/HDPDocuments/Ambari-2.7.0.0/bk_ambari-installation/content/hdp_30_repositories.html
-    # curl http://$IPADDRESS/centos7-install/repodata/hdp.repo -o /etc/yum.repos.d/hdp.repo
+    wget http://$IPADDRESS/centos7-install/repodata/hdp.repo -o /etc/yum.repos.d/hdp.repo
 
     # Confirm repository list has Ambari Repo
     REPO_CONFIG=\$(yum repolist)
@@ -733,7 +733,7 @@ case "\$CHECK_IP" in
     HAS_AMBARI_REPO=\$(echo \$REPO_CONFIG | grep -oE '(^| )ambari-2.7.[0-9].[0-9]( |$)' | awk 'FNR == 1 {print $1}')
     if [ "\$HAS_AMBARI_REPO" = "ambari-2.7.0.0" ]; then
       printf "Task 9: Repo List has Ambari Repo, Installing ambari-server\n"
-      # yum localinstall -y ambari-server
+      yum localinstall -y ambari-server
 
       # automate ambari-server setup to accept all default values
       printf "Setting up ambari-server\n"
