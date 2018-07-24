@@ -153,14 +153,14 @@ $NODE8_IP # node8 - 10.1.1.18
 
 # Node Sandbox Hostnames
 node_sb=(
-"node1-sb.hortonworks.com"
-"node2-sb.hortonworks.com"
-"node3-sb.hortonworks.com"
-"node4-sb.hortonworks.com"
-"node5-sb.hortonworks.com"
-"node6-sb.hortonworks.com"
-"node7-sb.hortonworks.com"
-"node8-sb.hortonworks.com"
+node1-sb.hortonworks.com
+node2-sb.hortonworks.com
+node3-sb.hortonworks.com
+node4-sb.hortonworks.com
+node5-sb.hortonworks.com
+node6-sb.hortonworks.com
+node7-sb.hortonworks.com
+node8-sb.hortonworks.com
 )
 
 # Minnowboard Hardware Address (Usually called MAC address)
@@ -225,8 +225,8 @@ option pxelinux.configfile code 209 = text;
 option pxelinux.pathprefix code 210 = text;
 option pxelinux.reboottime code 211 = unsigned integer 32;
 option architecture-type code 93 = unsigned integer 16;
-subnet $SUBNET_IP netmask $SUBNETMASK {
 
+subnet $SUBNET_IP netmask $SUBNETMASK {
   option routers $GATEWAY_ROUTER_IP;
   # Dynamic Pool Range: *.*.*.20 to *.*.*.100, * is specific number
   pool {
@@ -249,42 +249,42 @@ subnet $SUBNET_IP netmask $SUBNETMASK {
 }
 
 host node1-sb {
-    option host-name ${node_sb[0]};
+    option host-name "${node_sb[0]}";
     hardware ethernet ${minnowboard_mac[0]};
     fixed-address ${node_ip[0]};
 }
 host node2-sb {
-    option host-name ${node_sb[1]};
+    option host-name "${node_sb[1]}";
     hardware ethernet ${minnowboard_mac[1]};
     fixed-address ${node_ip[1]};
 }
 host node3-sb {
-    option host-name ${node_sb[2]};
+    option host-name "${node_sb[2]}";
     hardware ethernet ${minnowboard_mac[2]};
     fixed-address ${node_ip[2]};
 }
 host node4-sb {
-    option host-name ${node_sb[3]};
+    option host-name "${node_sb[3]}";
     hardware ethernet ${minnowboard_mac[3]};
     fixed-address ${node_ip[3]};
 }
 host node5-sb {
-    option host-name ${node_sb[4]};
+    option host-name "${node_sb[4]}";
     hardware ethernet ${minnowboard_mac[4]};
     fixed-address ${node_ip[4]};
 }
 host node6-sb {
-    option host-name ${node_sb[5]};
+    option host-name "${node_sb[5]}";
     hardware ethernet ${minnowboard_mac[5]};
     fixed-address ${node_ip[5]};
 }
 host node7-sb {
-    option host-name ${node_sb[6]};
+    option host-name "${node_sb[6]}";
     hardware ethernet ${minnowboard_mac[6]};
     fixed-address ${node_ip[6]};
 }
 host node8-sb {
-    option host-name ${node_sb[7]};
+    option host-name "${node_sb[7]}";
     hardware ethernet ${minnowboard_mac[7]};
     fixed-address ${node_ip[7]};
 }
