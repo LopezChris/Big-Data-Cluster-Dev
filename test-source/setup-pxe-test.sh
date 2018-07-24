@@ -70,7 +70,7 @@ SUBNETMASK_NUM=$(atoi $SUBNETMASK)
 # Subnet IP in Decimal
 SUBNET_NUM=$(( $IPADDRESS_NUM & $SUBNETMASK_NUM ))
 # Convert Decimal to IP for "Subnet IP"
-SUBNET_IP=$(itoa $NETWORK_NUM)
+SUBNET_IP=$(itoa $SUBNET_NUM)
 printf "Subnet IP: $SUBNET_IP\n"
 
 # Set DHCP Subnet IP Range for Random Devices that enter this network
