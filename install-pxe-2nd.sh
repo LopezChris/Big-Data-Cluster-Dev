@@ -153,12 +153,12 @@ printf "Config DHCP Server...\n"
 
 #
 # Server Information:
-# - IP Address
-# - Network IP ID
+# - IP Address (I get from my Server)
+# - Network IP ID (found bitwise AND IP Address with Subnet Mask)
 # - DHCP Server IP
-# - Subnet Range
-# - Gateway
-# - TFTP Server
+# - Subnet Range (IT Provides)
+# - Gateway (IT Provides)
+# - TFTP Server (Same as my IP address)
 # - DNS Server
 #
 
@@ -193,6 +193,8 @@ IPADDRESS=$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-
 printf "Server IP Address: $IPADDRESS\n"
 
 # Find Interface Name, ex: enp0s3
+# Only needed if you are going to tinker with the network configuration file
+# on a node
 # kernel lists them by name, we want the one related to ethernet
 # Reference: https://unix.stackexchange.com/questions/125400/how-can-i-find-available-network-interfaces
 INTERFACE_NAME=$(ls /sys/class/net/ | grep -o "en.*")
@@ -319,7 +321,7 @@ printf "DNS1 IP Address: $DNS1_IP\n"
 
 cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
 
-# Created dhcp.conf file to instruct DHCP server on which IP addresses will
+# Created dhcpd.conf file to instruct DHCP server on which IP addresses will
 # be assigned to particular MAC Addresses, where to find the initial boot file
 # loaded by the client
 tee -a /etc/dhcp/dhcpd.conf << EOF
