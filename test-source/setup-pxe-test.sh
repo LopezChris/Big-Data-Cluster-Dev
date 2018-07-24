@@ -177,14 +177,20 @@ minnowboard_mac=(
 )
 
 # Helper Packages for setting up PXE Server
-yum install -y wget git net-tools epel-release openssl shellinabox
+yum install -y epel-release
+yum install -y wget
+yum install -y git
+yum install -y net-tools
+yum install -y openssl
+yum install -y shellinabox
 
 # 0. Configure Shellinabox
-vi /etc/sysconfig/shellinaboxd
 # PORT should be 4200
 # IP address should be PXE server IP
 # Restrict access to shellinabox to localhost only? probably not
-perl -pi -e "s/host.*[^\"]/$IPADDRESS/g" /etc/sysconfig/shellinaboxd
+perl -pi -e "s/host.*[^\"]/$IPADDRESS\"/g" /etc/sysconfig/shellinaboxd
+# Need to uncomment the line
+
 
 # Start
 service shellinaboxd start
@@ -220,7 +226,9 @@ firewall-cmd --reload
 
 # 2. Configure a TFTP and DHCP Servers for Network Booting UEFI-based Clients
 printf "Configure TFTP and DHCP Servers for Network Booting UEFI-based Clients\n"
-yum install -y tftp-server tftp xinetd
+yum install -y tftp-server
+yum install -y tftp
+yum install -y xinetd
 # Allow incoming connections to the TFTP service in the firewall
 firewall-cmd --permanent --add-service=tftp
 firewall-cmd --reload
@@ -246,7 +254,7 @@ option architecture-type code 93 = unsigned integer 16;
 option subnet-mask $SUBNETMASK;
 option broadcast-address 10.1.1.255;
 option routers $GATEWAY_ROUTER_IP;
-option domain-name-servers 10.1.1.3 10.1.1.4;
+option domain-name-servers 8.8.8.8;
 
 subnet $SUBNET_IP netmask $SUBNETMASK {
   # Dynamic Pool Range: *.*.*.20 to *.*.*.100, * is specific number
