@@ -234,6 +234,7 @@ printf "Network Range IP End: $NETWORK_RANGE_IP_END\n"
 
 ADD_TO_RANGE_NUM3=$(atoi 0.0.0.10)
 NETWORK_RANGE_IP_BASE_NUM=$(( $NETWORK_NUM + $ADD_TO_RANGE_NUM3 ))
+NETWORK_RANGE_IP_BASE=$(itoa $NETWORK_RANGE_IP_BASE_NUM)
 printf "Network Range IP Base: $NETWORK_RANGE_IP_BASE\n"
 # IP Address that'll be assigned to a client based on
 # their MAC address of the network interface card for each node[1-8]

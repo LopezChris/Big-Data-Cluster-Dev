@@ -28,9 +28,9 @@ printf "Setup PXE Server For CentOS7 Network Installation\n"
 ##
 
 # Convert IP to decimal
+#Returns the integer representation of an IP arg, passed in ascii dotted-decimal notation (x.x.x.x)
 function atoi
 {
-#Returns the integer representation of an IP arg, passed in ascii dotted-decimal notation (x.x.x.x)
 IP=$1; IPNUM=0
 for (( i=0 ; i<4 ; ++i )); do
 ((IPNUM+=${IP%%.*}*$((256**$((3-${i}))))))
@@ -39,9 +39,9 @@ done
 echo $IPNUM
 }
 # Convert Decimal to IP
+#returns the dotted-decimal ascii form of an IP arg passed in integer format
 function itoa
 {
-#returns the dotted-decimal ascii form of an IP arg passed in integer format
 echo -n $(($(($(($((${1}/256))/256))/256))%256)).
 echo -n $(($(($((${1}/256))/256))%256)).
 echo -n $(($((${1}/256))%256)).
@@ -88,7 +88,8 @@ printf "Network Range IP End: $SUBNET_RANGE_IP_END\n"
 # Static IP Start Base for Nodes in Cluster
 STATIC_IP_START_BASE_NUM=$(atoi 0.0.0.10)
 SUBNET_STATIC_IP_BASE_NUM=$(( $SUBNET_NUM + $STATIC_IP_START_BASE_NUM ))
-printf "Subnet Staic IP Base: $SUBNET_STATIC_IP_BASE_NUM\n"
+SUBNET_STATIC_IP_BASE=$(itoa $SUBNET_STATIC_IP_BASE_NUM)
+printf "Subnet Staic IP Base: $SUBNET_STATIC_IP_BASE\n"
 
 # Node1 Static IP
 NODE1_OFFSET=$(atoi 0.0.0.1)
@@ -176,7 +177,24 @@ minnowboard_mac=(
 )
 
 # Helper Packages for setting up PXE Server
-yum install -y wget git net-tools
+yum install -y wget git net-tools epel-release openssl shellinabox
+
+# 0. Configure Shellinabox
+vi /etc/sysconfig/shellinaboxd
+# PORT should be 4200
+# IP address should be PXE server IP
+# Restrict access to shellinabox to localhost only? probably not
+perl -pi -e "s/host.*[^\"]/$IPADDRESS/g" /etc/sysconfig/shellinaboxd
+
+# Start
+service shellinaboxd start
+# Verify
+netstat -nap | grep shellinabox
+# Open shellinabox port 4200, make sure firewall
+# allows incoming connections to the shellinaboxd service
+# Check firewall active zone: firewall-cmd --get-active-zones
+firewall-cmd --zone=public --add-port=4200/tcp --permanent
+firewall-cmd --reload
 
 # 1. Configure HTTP Network Server to Export Installation Tree (ISO image)
 printf "Configure HTTP Network Server to Export Installation ISO image\n"
@@ -225,9 +243,12 @@ option pxelinux.configfile code 209 = text;
 option pxelinux.pathprefix code 210 = text;
 option pxelinux.reboottime code 211 = unsigned integer 32;
 option architecture-type code 93 = unsigned integer 16;
+option subnet-mask $SUBNETMASK;
+option broadcast-address 10.1.1.255;
+option routers $GATEWAY_ROUTER_IP;
+option domain-name-servers 10.1.1.3 10.1.1.4;
 
 subnet $SUBNET_IP netmask $SUBNETMASK {
-  option routers $GATEWAY_ROUTER_IP;
   # Dynamic Pool Range: *.*.*.20 to *.*.*.100, * is specific number
   pool {
       range $SUBNET_RANGE_IP_START $SUBNET_RANGE_IP_END;
@@ -248,6 +269,7 @@ subnet $SUBNET_IP netmask $SUBNETMASK {
 
 }
 
+# Request DHCP Server to give each client an IP addr based on ethernet addr
 host node1-sb {
     option host-name "${node_sb[0]}";
     hardware ethernet ${minnowboard_mac[0]};
