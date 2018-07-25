@@ -184,29 +184,11 @@ yum install -y net-tools
 yum install -y openssl
 yum install -y shellinabox
 
-# 0. Configure Shellinabox
-# PORT should be 4200
-# IP address should be PXE server IP
-# Restrict access to shellinabox to localhost only? probably not
-perl -pi -e "s/host.*[^\"]/$IPADDRESS\"/g" /etc/sysconfig/shellinaboxd
-# Need to uncomment the line
-
-
-# Start
-service shellinaboxd start
-# Verify
-netstat -nap | grep shellinabox
-# Open shellinabox port 4200, make sure firewall
-# allows incoming connections to the shellinaboxd service
-# Check firewall active zone: firewall-cmd --get-active-zones
-firewall-cmd --zone=public --add-port=4200/tcp --permanent
-firewall-cmd --reload
-
 # 1. Configure HTTP Network Server to Export Installation Tree (ISO image)
 printf "Configure HTTP Network Server to Export Installation ISO image\n"
 yum install -y httpd
 # Copy full CentOS7 binary DVD ISO image to HTTP server
-wget http://repo1.dal.innoscale.net/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso -O ~/CentOS-7-x86_64-Minimal-1804.iso
+wget http://mirror.rackspace.com/CentOS/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso -O ~/CentOS-7-x86_64-Minimal-1804.iso
 # Mount binary DVD ISO image using mount to a suitable directory
 # Suitable directory: /mnt/centos7-install/
 mkdir -p /mnt/centos7-install/
@@ -223,6 +205,27 @@ systemctl start httpd.service
 # you are installing to access the remote installation source
 firewall-cmd --permanent --add-service=http
 firewall-cmd --reload
+
+
+# Extra: Configure Shellinabox
+# PORT should be 4200
+# IP address should be PXE server IP
+# Restrict access to shellinabox to localhost only? probably not
+perl -pi -e "s/#[ ]*OPTS=\"-t/OPTS=\"-t/g" /etc/sysconfig/shellinaboxd
+perl -pi -e "s/host.*[^\"]/$IPADDRESS\"/g" /etc/sysconfig/shellinaboxd
+# Need to uncomment the line
+
+# Start
+service shellinaboxd start
+# Verify
+netstat -nap | grep shellinabox
+# Open shellinabox port 4200, make sure firewall
+# allows incoming connections to the shellinaboxd service
+# Check firewall active zone:
+firewall-cmd --get-active-zones
+firewall-cmd --zone=public --add-port=4200/tcp --permanent
+firewall-cmd --reload
+
 
 # 2. Configure a TFTP and DHCP Servers for Network Booting UEFI-based Clients
 printf "Configure TFTP and DHCP Servers for Network Booting UEFI-based Clients\n"
@@ -241,6 +244,7 @@ cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
 
 # Update dhcpd.conf, so DHCP Server will know which IP addresses to
 # assign to particular MAC addresses
+# https://www.pks.mpg.de/~mueller/docs/suse10.1/suselinux-manual_en/manual/sec.dhcp.server.html
 tee -a /etc/dhcp/dhcpd.conf << EOF
 allow booting;
 allow bootp;
@@ -254,7 +258,8 @@ option architecture-type code 93 = unsigned integer 16;
 option subnet-mask $SUBNETMASK;
 option broadcast-address 10.1.1.255;
 option routers $GATEWAY_ROUTER_IP;
-option domain-name-servers 8.8.8.8;
+# Public DNS Server List: https://public-dns.info/nameserver/us.html
+option domain-name-servers 8.8.8.8, 104.155.28.90, 216.116.96.2;
 
 subnet $SUBNET_IP netmask $SUBNETMASK {
   # Dynamic Pool Range: *.*.*.20 to *.*.*.100, * is specific number
