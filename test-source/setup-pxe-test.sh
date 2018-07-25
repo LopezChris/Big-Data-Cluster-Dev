@@ -180,6 +180,7 @@ minnowboard_mac=(
 yum install -y epel-release
 yum install -y wget
 yum install -y git
+yum install -y perl
 yum install -y net-tools
 yum install -y openssl
 yum install -y shellinabox
@@ -196,6 +197,7 @@ mkdir -p /mnt/centos7-install/
 mount -o loop,ro -t iso9660 ~/CentOS-7-x86_64-Minimal-1804.iso /mnt/centos7-install/
 # Copy files from mounted image to HTTP server
 cp -r /mnt/centos7-install/ /var/www/html/
+chmod 777 /var/www/html/centos7-install/
 # Start httpd service
 # Enable httpd service, so by default it starts on startup
 systemctl enable httpd.service

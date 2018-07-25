@@ -20,8 +20,8 @@ GATEWAY_ROUTER_IP="10.1.1.1"
 ##
 
 # Update ifcfg-enp0s3, so PXE Server in the cluster network can get access to the internet
-perl -pi -e "s/BOOTPROTO=dhcp/BOOTPROTO=static/g" /etc/sysconfig/network-scripts/ifcfg-enp0s3
-perl -pi -e "s/ONBOOT=no/ONBOOT=yes/g" /etc/sysconfig/network-scripts/ifcfg-enp0s3
+sed -i -e "s/BOOTPROTO=dhcp/BOOTPROTO=static/g" /etc/sysconfig/network-scripts/ifcfg-enp0s3
+sed -i -e "s/ONBOOT=no/ONBOOT=yes/g" /etc/sysconfig/network-scripts/ifcfg-enp0s3
 # Append new information
 # Only append if file doesn't contain IPADDR, NETMASK, GATEWAY
 
@@ -30,8 +30,6 @@ IPADDR=$STATIC_IPADDRESS
 NETMASK=$SUBNETMASK
 GATEWAY=$GATEWAY_ROUTER_IP
 EOF
-
-service network restart
 
 # Update /etc/resolv.conf with Public DNS (name servers)
 # Public DNS Server List:
@@ -46,3 +44,5 @@ nameserver 104.155.28.90
 # Los Angeles
 nameserver 216.116.96.2
 EOF
+
+service network restart
