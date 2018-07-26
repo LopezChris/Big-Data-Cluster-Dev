@@ -299,10 +299,10 @@ printf "Network Interface Name: $INTERFACE_NAME\n"
 GATEWAY_ROUTER_IP=$(netstat -r -n | awk 'FNR == 3 {print $2}')
 printf "Gateway Router IP: $GATEWAY_ROUTER_IP\n"
 
-# Find DNS1 Server IP Address being used
+# Find DNS1 Server IP Address being used (Note: DNS1 not showing up)
 # Reference: https://unix.stackexchange.com/questions/28941/what-dns-servers-am-i-using
-DNS1_IP=$(nmcli dev show | grep "DNS\[1\]" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
-printf "DNS1 IP Address: $DNS1_IP\n"
+# DNS1_IP=$(nmcli dev show | grep "DNS\[1\]" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+# printf "DNS1 IP Address: $DNS1_IP\n"
 
 INIT_BOOT_FILENAME=EFI/BOOT/$(ls /var/www/html/centos7-install/EFI/BOOT/ | grep -o grubx64.*)
 printf "Initial Boot Filename: $INIT_BOOT_FILENAME\n"
@@ -333,6 +333,7 @@ option architecture-type code 93 = unsigned integer 16;
 subnet $NETWORK_IP_ID netmask $SUBNETMASK {
     # Reference on option routers: https://linux.die.net/man/5/dhcp-options
     option routers $GATEWAY_ROUTER_IP;
+    option domain-name-servers 10.10.1.20, 10.42.1.20;
     # Dynamic Pool Range: *.*.*.20 to *.*.*.100, * is specific number
     pool {
         range $NETWORK_RANGE_IP_START $NETWORK_RANGE_IP_END;
