@@ -1,6 +1,12 @@
 #!/bin/bash
 
+##
 # Setup PXE Server For CentOS7 Network Installation
+#
+# Testing on port 1.089.2 (WORKS) without IP range and Gateway provided by IT
+# My nodes have access to the internet.
+##
+
 ##
 # Description:
 # Preparing for a Network Installation to install CentOS7 on multiple Systems
@@ -20,6 +26,15 @@
 ##
 
 printf "Setup PXE Server For CentOS7 Network Installation\n"
+
+# Helper Packages for setting up PXE Server
+yum install -y epel-release
+yum install -y wget
+yum install -y perl
+yum install -y git
+yum install -y net-tools
+yum install -y openssl
+yum install -y shellinabox
 
 ##
 # Helper Functions for setting up PXE Server
@@ -48,20 +63,26 @@ echo -n $(($((${1}/256))%256)).
 echo $((${1}%256))
 }
 
-##
-# Useful variables that hold information about the PXE Server
-# - Provided by my Server: IP Address
-# - Provided by IT: IP Range Allocated (for nodes), Gateway IP, Subnet Mask
-##
+# Find IP Address
 IPADDRESS=$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
 printf "Server IP Address: $IPADDRESS\n"
 
-# Based on IP Range Allocated: 10.1.1.0/24
-SUBNETMASK="255.255.255.0"
+# Find Interface Name, ex: enp0s3
+# kernel lists them by name, we want the one related to ethernet
+INTERFACE_NAME=$(ls /sys/class/net/ | grep -o "en.*")
+printf "Network Interface Name: $INTERFACE_NAME\n"
 
-# IT Provided, Default Gateway IP
-# Acts as a way for the nodes to get access to the internet
-GATEWAY_ROUTER_IP="10.1.1.1"
+# Find Subnetmask
+SUBNETMASK=$(ifconfig $INTERFACE_NAME | awk 'FNR == 2 {print $4}')
+printf "Server Subnetmask Address: $SUBNETMASK\n"
+
+# Find Broadcast IP
+BROADCAST=$(ifconfig $INTERFACE_NAME | awk 'FNR == 2 {print $6}')
+printf "Server Subnetmask Address: $BROADCAST\n"
+
+# Find Gateway IP
+GATEWAY_ROUTER_IP=$(netstat -r -n | awk 'FNR == 3 {print $2}')
+printf "Gateway Router IP: $GATEWAY_ROUTER_IP\n"
 
 # Subnet = IPADDRESS & SUBNETMASK
 # IP Address and Subnetmask in Decimal
@@ -139,17 +160,16 @@ NODE8_IP_NUM=$(( $SUBNET_STATIC_IP_BASE_NUM + $NODE8_OFFSET ))
 NODE8_IP=$(itoa $NODE8_IP_NUM)
 printf "Static IP Node8: $NODE8_IP\n"
 
-# IT Provided, IP Range Allocation for nodes in cluster:
-# 10.1.1.0/24 = 10.1.1.0 - 10.1.1.255
+# Static IPs that'll be used for nodes
 node_ip=(
-$NODE1_IP # node1 - 10.1.1.11
-$NODE2_IP # node2 - 10.1.1.12
-$NODE3_IP # node3 - 10.1.1.13
-$NODE4_IP # node4 - 10.1.1.14
-$NODE5_IP # node5 - 10.1.1.15
-$NODE6_IP # node6 - 10.1.1.16
-$NODE7_IP # node7 - 10.1.1.17
-$NODE8_IP # node8 - 10.1.1.18
+$NODE1_IP # node1
+$NODE2_IP # node2
+$NODE3_IP # node3
+$NODE4_IP # node4
+$NODE5_IP # node5
+$NODE6_IP # node6
+$NODE7_IP # node7
+$NODE8_IP # node8
 )
 
 # Node Sandbox Hostnames
@@ -175,15 +195,6 @@ minnowboard_mac=(
 00:08:A2:09:F2:62
 00:08:A2:09:BE:F2
 )
-
-# Helper Packages for setting up PXE Server
-yum install -y epel-release
-yum install -y wget
-yum install -y git
-yum install -y perl
-yum install -y net-tools
-yum install -y openssl
-yum install -y shellinabox
 
 # 1. Configure HTTP Network Server to Export Installation Tree (ISO image)
 printf "Configure HTTP Network Server to Export Installation ISO image\n"
@@ -259,10 +270,10 @@ option pxelinux.reboottime code 211 = unsigned integer 32;
 option architecture-type code 93 = unsigned integer 16;
 
 subnet $SUBNET_IP netmask $SUBNETMASK {
-  option broadcast-address 10.1.1.255;
+  option broadcast-address $BROADCAST;
   option routers $GATEWAY_ROUTER_IP;
   # Public DNS Server List: https://public-dns.info/nameserver/us.html
-  option domain-name-servers 8.8.8.8, 104.155.28.90, 216.116.96.2;
+  option domain-name-servers 8.8.8.8, 104.155.28.90, 216.116.96.2, 10.10.1.20, 10.42.1.20;
   # Dynamic Pool Range: *.*.*.20 to *.*.*.100, * is specific number
   pool {
       range $SUBNET_RANGE_IP_START $SUBNET_RANGE_IP_END;
@@ -388,8 +399,11 @@ clearpart --all
 # Add CentOS7 EXTRAS (includes SSHPASS) Repository
 repo --name=extras --baseurl=http://mirror.centos.org/centos/7/extras/x86_64/
 
-# Add EPEL (includes pssh) Repository
-repo --name=epel-release --baseurl=http://dl.fedoraproject.org/pub/epel/7/x86_64/
+# Add CentOS7 OS (includes ntp, chrony, wget, net-tools) Repository
+repo --name=os --baseurl=http://mirror.centos.org/centos/7/os/x86_64/
+
+# Add EPEL (includes pssh, epel) Repository
+repo --name=epel --baseurl=http://dl.fedoraproject.org/pub/epel/7/x86_64/
 
 %packages
 
@@ -415,6 +429,9 @@ pwpolicy root --minlen=6 --minquality=1 --notstrict --nochanges --notempty
 pwpolicy user --minlen=6 --minquality=1 --notstrict --nochanges --emptyok
 pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
 %end
+
+# Reboot after installation is complete
+reboot
 EOF
 
 chmod 777 /var/www/html/centos7-install/ks.cfg
@@ -440,11 +457,13 @@ perl -pi -e "s/(disable)(.*=.*)(yes)/\1\2no/g" /etc/xinetd.d/tftp
 
 # 8. Start and enable PXE Server services
 # DHCPD Service:
-systemctl enable dhcpd
 systemctl start dhcpd
+systemctl enable dhcpd
 # xinetd Service that manages the TFTPD Service:
-systemctl enable xinetd
 systemctl start xinetd
+systemctl enable xinetd
 # TFTP Server Service:
-systemctl enable tftp
 systemctl start tftp
+systemctl enable tftp
+
+systemctl status httpd.service dhcpd xinetd tftp
