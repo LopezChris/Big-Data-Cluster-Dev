@@ -7,7 +7,7 @@ yum install -y wget git net-tools
 # without IP range and Gateway provided by IT
 # - Need to test PXE Server for CentOS7 Net Install on 1.089.1
 # first try without IP range and Gateway provided by IT
-# 
+#
 ##
 
 ##
@@ -46,7 +46,7 @@ yum install -y wget git net-tools
 # 1. Install httpd package
 yum install -y httpd
 # 2. Copy full CentOS7 binary DVD ISO image to HTTP server
-wget http://repo1.dal.innoscale.net/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso
+wget http://repo1.dal.innoscale.net/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso -O ~/CentOS-7-x86_64-Minimal-1804.iso
 # 3. Mount binary DVD ISO image using mount to a suitable directory
 mkdir -p /mnt/centos7-install/
 # Mount the CentOS7 ISO image, using the loop device, to /mnt/centos7-install/
