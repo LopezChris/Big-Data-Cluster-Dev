@@ -4,10 +4,9 @@ yum install -y wget git net-tools
 
 ##
 # - Tested PXE Server for CentOS7 Net Install on 1.089.2 (WORKS)
-# without IP range and Gateway provided by IT
-# - Need to test PXE Server for CentOS7 Net Install on 1.089.1
-# first try without IP range and Gateway provided by IT
-#
+# without IP range and Gateway provided by IT. My nodoes have internet access.
+# - Need to test PXE Server for CentOS7 Net Install on 1.089.1 (NOT-WORKING)
+# first try without IP range and Gateway provided by IT.
 ##
 
 ##
