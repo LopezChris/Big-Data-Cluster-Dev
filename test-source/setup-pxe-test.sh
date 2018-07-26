@@ -3,8 +3,12 @@
 ##
 # Setup PXE Server For CentOS7 Network Installation
 #
-# Testing on port 1.089.2 (WORKS) without IP range and Gateway provided by IT
+# Preferred: Tested on port 1.089.1 (WORKS) private network and used IP range
+# and Gateway provided by IT. My nodes have access over the internet too.
+#
+# Backup Plan: Tested on port 1.089.2 (WORKS) without IP range and Gateway provided by IT
 # My nodes have access to the internet.
+#
 ##
 
 ##
