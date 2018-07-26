@@ -4,7 +4,7 @@ yum install -y wget git net-tools
 
 ##
 # - Tested PXE Server for CentOS7 Net Install on 1.089.2 (WORKS)
-# without IP range and Gateway provided by IT. My nodoes have internet access.
+# without IP range and Gateway provided by IT. My nodes have internet access.
 # - Need to test PXE Server for CentOS7 Net Install on 1.089.1 (NOT-WORKING)
 # first try without IP range and Gateway provided by IT.
 ##
@@ -195,6 +195,13 @@ echo $((${1}%256))
 IPADDRESS=$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
 printf "Server IP Address: $IPADDRESS\n"
 
+# Find Interface Name, ex: enp0s3
+# kernel lists them by name, we want the one related to ethernet
+# Reference: https://unix.stackexchange.com/questions/125400/how-can-i-find-available-network-interfaces
+INTERFACE_NAME=$(ls /sys/class/net/ | grep -o "en.*")
+printf "Network Interface Name: $INTERFACE_NAME\n"
+
+
 # Find Subnetmask
 # Reference to find SUBNETMASK: https://www.cyberciti.biz/faq/howto-find-subnet-mask-on-unix/
 # Reference on awk: https://stackoverflow.com/questions/1506521/select-row-and-element-in-awk
@@ -282,11 +289,6 @@ NODE6_SB=node6-sb.hortonworks.com
 NODE7_SB=node7-sb.hortonworks.com
 NODE8_SB=node8-sb.hortonworks.com
 
-# Find Interface Name, ex: enp0s3
-# kernel lists them by name, we want the one related to ethernet
-# Reference: https://unix.stackexchange.com/questions/125400/how-can-i-find-available-network-interfaces
-INTERFACE_NAME=$(ls /sys/class/net/ | grep -o "en.*")
-printf "Network Interface Name: $INTERFACE_NAME\n"
 
 # Find Default Gateway IP in Linux (Unix/FreeBSD/OpenBSD/macOS)
 # Gateway - network point acts as entrance to another network
