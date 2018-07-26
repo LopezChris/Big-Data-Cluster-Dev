@@ -460,32 +460,32 @@ CHECK_IP=\$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-
 echo "CHECK_IP = \$CHECK_IP"
 # Verify on node1-sb, if so, then install pssh
 case "\$CHECK_IP" in
-  "$STATIC_IP_NODE1") printf "Setting up Node1-sb:\n"
+  "${node_ip[0]}") printf "Setting up Node1-sb:\n"
     printf "1. Preparing Environment....\n"
     # Create pssh_hosts file
 
     printf "Task 2: Creating pssh-hosts file\n"
-    echo "$STATIC_IP_NODE1" | tee -a /etc/pssh-hosts
-    echo "$STATIC_IP_NODE2" | tee -a /etc/pssh-hosts
-    echo "$STATIC_IP_NODE3" | tee -a /etc/pssh-hosts
-    echo "$STATIC_IP_NODE4" | tee -a /etc/pssh-hosts
-    echo "$STATIC_IP_NODE5" | tee -a /etc/pssh-hosts
-    echo "$STATIC_IP_NODE6" | tee -a /etc/pssh-hosts
-    echo "$STATIC_IP_NODE7" | tee -a /etc/pssh-hosts
-    echo "$STATIC_IP_NODE8" | tee -a /etc/pssh-hosts
+    echo "${node_ip[0]}" | tee -a /etc/pssh-hosts
+    echo "${node_ip[1]}" | tee -a /etc/pssh-hosts
+    echo "${node_ip[2]}" | tee -a /etc/pssh-hosts
+    echo "${node_ip[3]}" | tee -a /etc/pssh-hosts
+    echo "${node_ip[4]}" | tee -a /etc/pssh-hosts
+    echo "${node_ip[5]}" | tee -a /etc/pssh-hosts
+    echo "${node_ip[6]}" | tee -a /etc/pssh-hosts
+    echo "${node_ip[7]}" | tee -a /etc/pssh-hosts
 
     # Creating script that will be used to add hosts info to each host in cluster
     printf "Task 3: Creating shell script to append ip map host across each node\n"
     echo "#!/bin/bash" | tee -a /append_hosts.sh
     echo "cat << EOF >> /etc/hosts" | tee -a /append_hosts.sh
-    echo "$STATIC_IP_NODE1 $NODE1_SB" | tee -a /append_hosts.sh
-    echo "$STATIC_IP_NODE2 $NODE2_SB" | tee -a /append_hosts.sh
-    echo "$STATIC_IP_NODE3 $NODE3_SB" | tee -a /append_hosts.sh
-    echo "$STATIC_IP_NODE4 $NODE4_SB" | tee -a /append_hosts.sh
-    echo "$STATIC_IP_NODE5 $NODE5_SB" | tee -a /append_hosts.sh
-    echo "$STATIC_IP_NODE6 $NODE6_SB" | tee -a /append_hosts.sh
-    echo "$STATIC_IP_NODE7 $NODE7_SB" | tee -a /append_hosts.sh
-    echo "$STATIC_IP_NODE8 $NODE8_SB" | tee -a /append_hosts.sh
+    echo "${node_ip[0]} ${node_sb[0]}" | tee -a /append_hosts.sh
+    echo "${node_ip[1]} ${node_sb[1]}" | tee -a /append_hosts.sh
+    echo "${node_ip[2]} ${node_sb[2]}" | tee -a /append_hosts.sh
+    echo "${node_ip[3]} ${node_sb[3]}" | tee -a /append_hosts.sh
+    echo "${node_ip[4]} ${node_sb[4]}" | tee -a /append_hosts.sh
+    echo "${node_ip[5]} ${node_sb[5]}" | tee -a /append_hosts.sh
+    echo "${node_ip[6]} ${node_sb[6]}" | tee -a /append_hosts.sh
+    echo "${node_ip[7]} ${node_sb[7]}" | tee -a /append_hosts.sh
     echo "EOF" | tee -a /append_hosts.sh
 
     printf "Task 4: Setting up Password-less SSH on Each Host\n"
@@ -563,7 +563,7 @@ case "\$CHECK_IP" in
 
     # Download Ambari Repo, yum install ambari-server should work cause it is local
     # 4. Place the ambari.repo file on the Ambari Server host
-    wget http://$IPADDRESS/centos7-install/localrepo/ambari.repo -O /etc/yum.repos.d/ambari.repo
+    wget http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.7.0.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
     # 5. Edit the priorities.conf file to add the following values
     tee -a /etc/yum/pluginconf.d/priorities.conf << EOF
     [main]
@@ -572,7 +572,7 @@ case "\$CHECK_IP" in
     EOF
 
     # Reference for HDP3.0: https://docs.hortonworks.com/HDPDocuments/Ambari-2.7.0.0/bk_ambari-installation/content/hdp_30_repositories.html
-    wget http://$IPADDRESS/centos7-install/repodata/hdp.repo -o /etc/yum.repos.d/hdp.repo
+    wget http://public-repo-1.hortonworks.com/HDP/centos7/3.x/updates/3.0.0.0/hdp.repo -o /etc/yum.repos.d/hdp.repo
 
     # Confirm repository list has Ambari Repo
     REPO_CONFIG=\$(yum repolist)
@@ -581,7 +581,7 @@ case "\$CHECK_IP" in
     HAS_AMBARI_REPO=\$(echo \$REPO_CONFIG | grep -oE '(^| )ambari-2.7.[0-9].[0-9]( |$)' | awk 'FNR == 1 {print $1}')
     if [ "\$HAS_AMBARI_REPO" = "ambari-2.7.0.0" ]; then
       printf "Task 9: Repo List has Ambari Repo, Installing ambari-server\n"
-      yum localinstall -y ambari-server
+      yum install -y ambari-server
 
       # automate ambari-server setup to accept all default values
       printf "Setting up ambari-server\n"
@@ -596,7 +596,7 @@ case "\$CHECK_IP" in
       printf "Repo List doesn't have Ambari Repo\n"
     fi
     ;;
-  "$STATIC_IP_NODE2") printf "Setting up Node2-sb:\n"
+  "${node_ip[1]}") printf "Setting up Node2-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE2_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
@@ -604,42 +604,42 @@ case "\$CHECK_IP" in
     echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
     echo "HOSTNAME=$NODE2_SB" | tee -a /etc/sysconfig/network
     ;;
-  "$STATIC_IP_NODE3") printf "Setting up Node3-sb:\n"
+  "${node_ip[2]}") printf "Setting up Node3-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE3_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
     echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
     echo "HOSTNAME=$NODE3_SB" | tee -a /etc/sysconfig/network
     ;;
-  "$STATIC_IP_NODE4") printf "Setting up Node4-sb:\n"
+  "${node_ip[3]}") printf "Setting up Node4-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE4_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
     echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
     echo "HOSTNAME=$NODE4_SB" | tee -a /etc/sysconfig/network
     ;;
-  "$STATIC_IP_NODE5") printf "Setting up Node5-sb:\n"
+  "${node_ip[4]}") printf "Setting up Node5-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE5_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
     echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
     echo "HOSTNAME=$NODE5_SB" | tee -a /etc/sysconfig/network
     ;;
-  "$STATIC_IP_NODE6") printf "Setting up Node6-sb:\n"
+  "${node_ip[5]}") printf "Setting up Node6-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE6_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
     echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
     echo "HOSTNAME=$NODE6_SB" | tee -a /etc/sysconfig/network
     ;;
-  "$STATIC_IP_NODE7") printf "Setting up Node7-sb:\n"
+  "${node_ip[6]}") printf "Setting up Node7-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE7_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
     echo "NETWORKING=yes" | tee -a /etc/sysconfig/network
     echo "HOSTNAME=$NODE7_SB" | tee -a /etc/sysconfig/network
     ;;
-  "$STATIC_IP_NODE8") printf "Setting up Node8-sb:\n"
+  "${node_ip[7]}") printf "Setting up Node8-sb:\n"
     printf "Task 1: Permanently set hostname\n"
     hostnamectl set-hostname $NODE8_SB
     printf "Task 2: Appending FQDN to Network Config file\n"
