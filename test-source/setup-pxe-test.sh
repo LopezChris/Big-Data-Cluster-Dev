@@ -257,13 +257,12 @@ option pxelinux.configfile code 209 = text;
 option pxelinux.pathprefix code 210 = text;
 option pxelinux.reboottime code 211 = unsigned integer 32;
 option architecture-type code 93 = unsigned integer 16;
-option subnet-mask $SUBNETMASK;
-option broadcast-address 10.1.1.255;
-option routers $GATEWAY_ROUTER_IP;
-# Public DNS Server List: https://public-dns.info/nameserver/us.html
-option domain-name-servers 8.8.8.8, 104.155.28.90, 216.116.96.2;
 
 subnet $SUBNET_IP netmask $SUBNETMASK {
+  option broadcast-address 10.1.1.255;
+  option routers $GATEWAY_ROUTER_IP;
+  # Public DNS Server List: https://public-dns.info/nameserver/us.html
+  option domain-name-servers 8.8.8.8, 104.155.28.90, 216.116.96.2;
   # Dynamic Pool Range: *.*.*.20 to *.*.*.100, * is specific number
   pool {
       range $SUBNET_RANGE_IP_START $SUBNET_RANGE_IP_END;
@@ -344,7 +343,11 @@ rpm2cpio $GRUB2_EFI_PACKAGE | cpio -dimv
 rpm2cpio $SHIM_EFI_PACKAGE | cpio -dimv
 # Copy EFI boot images from your directory to tftpboot
 cp -r boot/efi/EFI/centos/grubx64.efi /var/lib/tftpboot/
+cp -r boot/efi/EFI/centos/shimx64.efi /var/lib/tftpboot/
 cp -r boot/efi/EFI/centos/shim.efi /var/lib/tftpboot/
+chmod 777 /var/lib/tftpboot/grubx64.efi
+chmod 777 /var/lib/tftpboot/shimx64.efi
+chmod 777 /var/lib/tftpboot/shim.efi
 cd ~/
 
 # Create Anaconda Kickstart for Minnowboard used in Network Installation
@@ -437,11 +440,11 @@ perl -pi -e "s/(disable)(.*=.*)(yes)/\1\2no/g" /etc/xinetd.d/tftp
 
 # 8. Start and enable PXE Server services
 # DHCPD Service:
-systemctl start dhcpd
 systemctl enable dhcpd
+systemctl start dhcpd
 # xinetd Service that manages the TFTPD Service:
-systemctl start xinetd
 systemctl enable xinetd
+systemctl start xinetd
 # TFTP Server Service:
-systemctl start tftp
 systemctl enable tftp
+systemctl start tftp
