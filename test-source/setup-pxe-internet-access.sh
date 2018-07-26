@@ -1,12 +1,16 @@
 #!/bin/bash
 
 ##
-# Prequisite: Need to get internet access if don't have it already
+# Prequisite: Need to get internet access for PXE Server if don't have it already
 # User doesn't have internet on guest vm, so share script by USB
 ##
 
+##
+# IP Range: 10.1.1.0 - 10.1.1.9 is reserved for IT devices
+##
+
 # Static IP falls within IP Range Provided by IT: 10.1.1.0/24
-STATIC_IPADDRESS="10.1.1.2"
+STATIC_IPADDRESS="10.1.1.11"
 
 # Based on IP Range Allocated: 10.1.1.0/24
 SUBNETMASK="255.255.255.0"
