@@ -215,12 +215,12 @@ minnowboard_mac=(
 printf "Configure HTTP Network Server to Export Installation ISO image\n"
 yum install -y httpd
 # Copy full CentOS7 binary DVD ISO image to HTTP server
-wget http://mirror.rackspace.com/CentOS/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso -O ~/CentOS-7-x86_64-Minimal-1804.iso
+wget http://mirror.rackspace.com/CentOS/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso -O /root/CentOS-7-x86_64-Minimal-1804.iso
 # Mount binary DVD ISO image using mount to a suitable directory
 # Suitable directory: /mnt/centos7-install/
 mkdir -p /mnt/centos7-install/
 # Mount the CentOS7 ISO image using the loop device to /mnt/centos7-install/
-mount -o loop,ro -t iso9660 ~/CentOS-7-x86_64-Minimal-1804.iso /mnt/centos7-install/
+mount -o loop,ro -t iso9660 /root/CentOS-7-x86_64-Minimal-1804.iso /mnt/centos7-install/
 # Copy files from mounted image to HTTP server
 cp -r /mnt/centos7-install/ /var/www/html/
 chmod 777 /var/www/html/centos7-install/
@@ -375,7 +375,7 @@ cp -r boot/efi/EFI/centos/shim.efi /var/lib/tftpboot/
 chmod 777 /var/lib/tftpboot/grubx64.efi
 chmod 777 /var/lib/tftpboot/shimx64.efi
 chmod 777 /var/lib/tftpboot/shim.efi
-cd ~/
+cd /root/
 
 # Create Anaconda Kickstart for Minnowboard used in Network Installation
 PASSWORD=$(python -c 'import crypt; print(crypt.crypt("hadoop", crypt.mksalt(crypt.METHOD_SHA512)))')
@@ -452,22 +452,20 @@ pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
 reboot
 EOF
 
-# After Reboot once NetBoot Finished, run this script to install Ambari
-PSSH_PASSWD=hadoop
-
-printf "2. Setting up Password-less SSH on Each Host\n"
+printf "2. Setting up Password-less SSH on Each Host in the Cluster\n"
 # Run shell script on each host ip address provided in pssh-hosts file
 # Appends map of ip to host on each node's hosts file
 
-printf "Creating public and private SSH keys on Ambari Server Host\n"
+printf "Creating public SSH keys that will be copied into Each Host\n"
+printf "Creating private SSH key that will be copied onto Ambari Server Host\n"
 # Reference: https://stackoverflow.com/questions/10767488/automate-ssh-keygen-t-rsa-so-it-does-not-ask-for-a-passphrase
-ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ''
+ssh-keygen -q -t rsa -f /root/.ssh/id_rsa -N ''
 # Add SSH Public Key to Authorized_keys file to each target host
 printf "Copy SSH Public Key into 'authorized_keys' file\n"
-cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-PRIVATE_ID_RSA=$(cat ~/.ssh/id_rsa)
-ID_RSA_PUB=$(cat ~/.ssh/id_rsa.pub)
-AUTHORIZED_KEYS=$(cat ~/.ssh/authorized_keys)
+cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+PRIVATE_ID_RSA=$(cat /root/.ssh/id_rsa)
+ID_RSA_PUB=$(cat /root/.ssh/id_rsa.pub)
+AUTHORIZED_KEYS=$(cat /root/.ssh/authorized_keys)
 
 # Append kickstart post section to begin preparing the cluster environment for
 # an ambari install
@@ -489,21 +487,21 @@ echo "${node_ip[7]} ${node_sb[7]}" | tee -a /etc/hosts
 
 printf "Setting up passwordless SSH....\n"
 
-# Create ~/.ssh folder on each host
-printf "Create ~/.ssh folder on each host\n"
-mkdir ~/.ssh
+# Create /root/.ssh folder on each host
+printf "Create /root/.ssh folder on each host\n"
+mkdir -p /root/.ssh
 
 # Copy and Send id_rsa.pub and authorized_keys files to each host
 # Reference: https://www.tecmint.com/copy-files-to-multiple-linux-servers/
 printf "Copy id_rsa.pub file to each host\n"
-echo "$ID_RSA_PUB" | tee -a ~/.ssh/id_rsa.pub
+echo "$ID_RSA_PUB" | tee -a /root/.ssh/id_rsa.pub
 printf "Copy authorized_keys file to each host\n"
-echo "$AUTHORIZED_KEYS" | tee -a ~/.ssh/authorized_keys
+echo "$AUTHORIZED_KEYS" | tee -a /root/.ssh/authorized_keys
 
-printf "Set permissions ~/.ssh on each host\n"
-chmod 700 ~/.ssh
+printf "Set permissions /root/.ssh on each host\n"
+chmod 700 /root/.ssh
 printf "Set permissions authorized_keys on each host\n"
-chmod 600 ~/.ssh/authorized_keys
+chmod 600 /root/.ssh/authorized_keys
 
 # Done setting password-less SSH
 printf "Done Setting Up Password-less SSH for Ambari to later install HDP....\n"
@@ -538,7 +536,7 @@ case "\$CHECK_IP" in
   "${node_ip[0]}") printf "Setting up Node1-sb:\n"
 
     printf "Copy id_rsa file to node1-sb host\n"
-    echo "$PRIVATE_ID_RSA" | tee -a ~/.ssh/id_rsa
+    echo "$PRIVATE_ID_RSA" | tee -a /root/.ssh/id_rsa
 
     # Create pssh_hosts file
 
