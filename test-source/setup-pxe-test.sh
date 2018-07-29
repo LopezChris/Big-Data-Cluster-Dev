@@ -538,6 +538,9 @@ case "\$CHECK_IP" in
     printf "Copy id_rsa file to node1-sb host\n"
     echo "$PRIVATE_ID_RSA" | tee -a /root/.ssh/id_rsa
 
+    printf "Alter permissions of id_rsa: too open to allow owners read/write"
+    chmod 600 /root/.ssh/id_rsa
+
     # Create pssh_hosts file
 
     printf "Task 2: Creating pssh-hosts file\n"
@@ -584,19 +587,6 @@ case "\$CHECK_IP" in
     # if [ "\$HAS_AMBARI_REPO" = "ambari-2.7.0.0" ]; then
     printf "7: Repo List has Ambari Repo, Installing ambari-server\n"
     yum install -y ambari-server
-
-    # automate ambari-server setup to accept all default values
-    printf "Setting up ambari-server\n"
-    ambari-server setup -s
-
-    printf "Starting Ambari\n"
-    ambari-server start
-    ambari-server status
-    printf "Open Ambari UI at: http://node1-sb.hortonworks.com:8080\n"
-    # else
-    #  printf "Repo List doesn't have Ambari Repo\n"
-    # fi
-
   ;;
   "${node_ip[1]}") printf "Setting up Node2-sb:\n"
     printf "Task 1: Permanently set hostname\n"
@@ -649,11 +639,56 @@ case "\$CHECK_IP" in
     echo "HOSTNAME=${node_sb[7]}" | tee -a /etc/sysconfig/network
   ;;
   *)
-    printf "Automation applies to all nodes in the cluster\n"
+    printf "Node isn't in the cluster\n"
   ;;
 esac
 
 %end
+
+%post --nochroot
+
+# Reference: https://superuser.com/questions/1163676/how-to-echo-a-line-of-bash-to-file-without-executing
+CHECK_IP=\$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+echo "CHECK_IP = \$CHECK_IP"
+
+# Check IP of node, then run appropriate case
+case "\$CHECK_IP" in
+  "${node_ip[0]}") printf "Setting up Ambari Server on Node1-sb:\n"
+    # automate ambari-server setup to accept all default values
+    printf "Setting up ambari-server\n"
+    ambari-server setup -s
+  ;;
+  *)
+    printf "Isn't the Ambari Node\n"
+  ;;
+esac
+
+%end
+
+%post
+
+# Reference: https://superuser.com/questions/1163676/how-to-echo-a-line-of-bash-to-file-without-executing
+CHECK_IP=\$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+echo "CHECK_IP = \$CHECK_IP"
+
+# Check IP of node, then run appropriate case
+case "\$CHECK_IP" in
+  "${node_ip[0]}") printf "Setting up Node1-sb:\n"
+    printf "Starting Ambari\n"
+    ambari-server start
+    ambari-server status
+    printf "Open Ambari UI at: http://node1-sb.hortonworks.com:8080\n"
+    # else
+    #  printf "Repo List doesn't have Ambari Repo\n"
+    # fi
+  ;;
+  *)
+    printf "Isn't the Ambari Node\n"
+  ;;
+esac
+
+%end
+
 EOF
 
 chmod 777 /var/www/html/centos7-install/ks.cfg
