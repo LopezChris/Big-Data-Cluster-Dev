@@ -587,6 +587,40 @@ case "\$CHECK_IP" in
     # if [ "\$HAS_AMBARI_REPO" = "ambari-2.7.0.0" ]; then
     printf "7: Repo List has Ambari Repo, Installing ambari-server\n"
     yum install -y ambari-server
+
+    # Create ambari custom script to be run at system boot (only one time)
+    echo "#!/bin/bash" | tee -a /tmp/setup-ambari.sh
+    echo "printf \"Setting up ambari-server\n\"" | tee -a /tmp/setup-ambari.sh
+    echo "# automate ambari-server setup to accept all default values" | tee -a /tmp/setup-ambari.sh
+    echo "ambari-server setup -s" | tee -a /tmp/setup-ambari.sh
+    echo "printf \"Starting Ambari\n\"" | tee -a /tmp/setup-ambari.sh
+    echo "ambari-server start" | tee -a /tmp/setup-ambari.sh
+    echo "ambari-server status" | tee -a /tmp/setup-ambari.sh
+    echo "printf \"Open Ambari UI at: http://node1-sb.hortonworks.com:8080\n\"" | tee -a /tmp/setup-ambari.sh
+    # Add execute permission (if not already set)
+    chmod a+x /tmp/setup-ambari.sh
+
+    # Create new ambari systemd service unit
+    # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/sect-managing_services_with_systemd-unit_files#ftn.idm140212702055552
+    # https://community.hortonworks.com/content/supportkb/151076/how-to-enable-ambari-server-auto-start-on-rhelcent.html
+    # https://www.thegeekdiary.com/centos-rhel-7-how-to-make-custom-script-to-run-automatically-during-boot/
+    # Script will only start if the file in ConditionPathExists
+    # https://www.freedesktop.org/software/systemd/man/systemd.unit.html
+    touch /etc/systemd/system/setup-ambari.service
+    chmod 664 /etc/systemd/system/setup-ambari.service
+    echo "[Unit]" | tee -a /etc/systemd/system/setup-ambari.service
+    echo "Description=On first boot, setup and start ambari" | tee -a /etc/systemd/system/setup-ambari.service
+    echo "After=network.target" | tee -a /etc/systemd/system/setup-ambari.service
+    echo "ConditionFirstBoot=yes"
+    echo " " | tee -a /etc/systemd/system/setup-ambari.service
+    echo "[Service]" | tee -a /etc/systemd/system/setup-ambari.service
+    echo "ExecStart=/tmp/setup-ambari.sh" | tee -a /etc/systemd/system/setup-ambari.service
+    echo "Type=forking" | tee -a /etc/systemd/system/setup-ambari.service
+    echo "[Install]" | tee -a /etc/systemd/system/setup-ambari.service
+    echo "WantedBy=default.target" | tee -a /etc/systemd/system/setup-ambari.service
+    # Notify systemd a new service exists
+    systemctl daemon-reload
+    systemctl enable setup-ambari.service
   ;;
   "${node_ip[1]}") printf "Setting up Node2-sb:\n"
     printf "Task 1: Permanently set hostname\n"
@@ -640,50 +674,6 @@ case "\$CHECK_IP" in
   ;;
   *)
     printf "Node isn't in the cluster\n"
-  ;;
-esac
-
-%end
-
-%post --nochroot
-
-# Reference: https://superuser.com/questions/1163676/how-to-echo-a-line-of-bash-to-file-without-executing
-CHECK_IP=\$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
-echo "CHECK_IP = \$CHECK_IP"
-
-# Check IP of node, then run appropriate case
-case "\$CHECK_IP" in
-  "${node_ip[0]}") printf "Setting up Ambari Server on Node1-sb:\n"
-    # automate ambari-server setup to accept all default values
-    printf "Setting up ambari-server\n"
-    ambari-server setup -s
-  ;;
-  *)
-    printf "Isn't the Ambari Node\n"
-  ;;
-esac
-
-%end
-
-%post
-
-# Reference: https://superuser.com/questions/1163676/how-to-echo-a-line-of-bash-to-file-without-executing
-CHECK_IP=\$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
-echo "CHECK_IP = \$CHECK_IP"
-
-# Check IP of node, then run appropriate case
-case "\$CHECK_IP" in
-  "${node_ip[0]}") printf "Setting up Node1-sb:\n"
-    printf "Starting Ambari\n"
-    ambari-server start
-    ambari-server status
-    printf "Open Ambari UI at: http://node1-sb.hortonworks.com:8080\n"
-    # else
-    #  printf "Repo List doesn't have Ambari Repo\n"
-    # fi
-  ;;
-  *)
-    printf "Isn't the Ambari Node\n"
   ;;
 esac
 
