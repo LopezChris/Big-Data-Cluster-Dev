@@ -579,12 +579,8 @@ case "\$CHECK_IP" in
     wget http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.7.0.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
 
     # Confirm repository list has Ambari Repo
-    # REPO_CONFIG=\$(yum repolist)
+    # yum repolist
 
-    # Verify ambari is apart of the repolist before installing ambari-server
-    # HAS_AMBARI_REPO=\$(echo \$REPO_CONFIG | grep -oE '(^| )ambari-2.7.[0-9].[0-9]( |$)' | awk 'FNR == 1 {print $1}')
-
-    # if [ "\$HAS_AMBARI_REPO" = "ambari-2.7.0.0" ]; then
     printf "7: Repo List has Ambari Repo, Installing ambari-server\n"
     yum install -y ambari-server
 
@@ -713,4 +709,23 @@ systemctl enable xinetd
 systemctl start tftp
 systemctl enable tftp
 
-systemctl status httpd.service dhcpd xinetd tftp
+# Check PXE Services to verify they are running, if not, then restart them
+tee -a /usr/bin/check-service.sh << EOF
+# The service being checked
+SERVICE=$1
+
+if [ "`systemctl is-active $SERVICE`" != "active" ]; then
+  echo "$SERVICE wasn't running, so attempting restart"
+  systemctl restart $SERVICE
+  exit 0
+fi
+echo "$SERVICE is currently running"
+exit 0
+EOF
+
+# Add crontab entry to run every minute
+# Check TFTP is running and each other service needed for PXE Server
+*/1 * * * * /usr/bin/check-service.sh tftp >> is-tftp-running.log
+*/1 * * * * /usr/bin/check-service.sh httpd.service >> is-httpd-running.log
+*/1 * * * * /usr/bin/check-service.sh dhcpd >> is-dhcpd-running.log
+*/1 * * * * /usr/bin/check-service.sh xinetd >> is-xinetd-running.log
