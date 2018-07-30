@@ -215,7 +215,7 @@ minnowboard_mac=(
 printf "Configure HTTP Network Server to Export Installation ISO image\n"
 yum install -y httpd
 # Copy full CentOS7 binary DVD ISO image to HTTP server
-wget http://mirror.rackspace.com/CentOS/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso -O /root/CentOS-7-x86_64-Minimal-1804.iso
+wget http://ftp.usf.edu/pub/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso -O /root/CentOS-7-x86_64-Minimal-1804.iso
 # Mount binary DVD ISO image using mount to a suitable directory
 # Suitable directory: /mnt/centos7-install/
 mkdir -p /mnt/centos7-install/
