@@ -41,6 +41,7 @@ yum install -y sshpass
 yum install -y net-tools
 yum install -y openssl
 yum install -y shellinabox
+yum install -y cronie cronie-anacron
 
 ##
 # Helper Functions for setting up PXE Server
@@ -712,20 +713,33 @@ systemctl enable tftp
 # Check PXE Services to verify they are running, if not, then restart them
 tee -a /usr/bin/check-service.sh << EOF
 # The service being checked
-SERVICE=$1
+SERVICE=\$1
 
-if [ "`systemctl is-active $SERVICE`" != "active" ]; then
-  echo "$SERVICE wasn't running, so attempting restart"
-  systemctl restart $SERVICE
+if [ "\$(systemctl is-active \$SERVICE)" != "active" ]; then
+  echo "\$SERVICE wasn't running, so attempting restart"
+  systemctl restart \$SERVICE
   exit 0
 fi
-echo "$SERVICE is currently running"
+echo "\$SERVICE is currently running"
 exit 0
 EOF
 
-# Add crontab entry to run every minute
-# Check TFTP is running and each other service needed for PXE Server
-*/1 * * * * /usr/bin/check-service.sh tftp >> is-tftp-running.log
-*/1 * * * * /usr/bin/check-service.sh httpd.service >> is-httpd-running.log
-*/1 * * * * /usr/bin/check-service.sh dhcpd >> is-dhcpd-running.log
-*/1 * * * * /usr/bin/check-service.sh xinetd >> is-xinetd-running.log
+##
+# Automating System Tasks with Cron: Check PXE Services are Running
+##
+
+# Prerequistes for Cron jobs
+systemctl enable crond.service
+systemctl start crond.service
+
+# Scheduling a Cron Job as root User to run every 1 minute
+tee -a /etc/cron.d/pxe-services-hourly << EOF
+# Run the hourly jobs
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+*/1 * * * * root /usr/bin/check-service.sh tftp
+*/1 * * * * /usr/bin/check-service.sh xinetd
+*/1 * * * * /usr/bin/check-service.sh dhcpd
+*/1 * * * * /usr/bin/check-service.sh httpd.service
+EOF
