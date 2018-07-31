@@ -724,6 +724,8 @@ echo "\$SERVICE is currently running"
 exit 0
 EOF
 
+chmod a+x /usr/bin/check-service.sh
+
 ##
 # Automating System Tasks with Cron: Check PXE Services are Running
 ##
@@ -738,8 +740,11 @@ tee -a /etc/cron.d/pxe-services-hourly << EOF
 SHELL=/bin/bash
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 MAILTO=root
-*/1 * * * * root /usr/bin/check-service.sh tftp
-*/1 * * * * /usr/bin/check-service.sh xinetd
-*/1 * * * * /usr/bin/check-service.sh dhcpd
-*/1 * * * * /usr/bin/check-service.sh httpd.service
+*/1 * * * * root "/usr/bin/check-service.sh" tftp
+*/1 * * * * root "/usr/bin/check-service.sh" xinetd
+*/1 * * * * root "/usr/bin/check-service.sh" dhcpd
+*/1 * * * * root "/usr/bin/check-service.sh" httpd.service
 EOF
+
+# check cron logs in case cron job isn't working as expected
+# vi /var/spool/mail/root
