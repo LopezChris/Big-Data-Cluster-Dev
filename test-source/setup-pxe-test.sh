@@ -585,6 +585,9 @@ case "\$CHECK_IP" in
     printf "7: Repo List has Ambari Repo, Installing ambari-server\n"
     yum install -y ambari-server
 
+    # Add longer timeout for connecting to port 8080
+    echo "server.startup.web.timeout=150" | tee -a /etc/ambari-server/conf/ambari.properties
+
     # Create ambari custom script to be run at system boot (only one time)
     echo "#!/bin/bash" | tee -a /usr/local/bin/setup-ambari.sh
     echo "printf \"Setting up ambari-server\n\"" | tee -a /usr/local/bin/setup-ambari.sh
@@ -596,7 +599,7 @@ case "\$CHECK_IP" in
     echo "systemctl disable setup-ambari.service" | tee -a /usr/local/bin/setup-ambari.sh
     echo "printf \"Open Ambari UI at: http://node1-sb.hortonworks.com:8080\n\"" | tee -a /usr/local/bin/setup-ambari.sh
     # Add execute permission (if not already set)
-    chmod a+x /tmp/setup-ambari.sh
+    chmod a+x /usr/local/bin/setup-ambari.sh
 
     # Create new ambari systemd service unit
     # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/sect-managing_services_with_systemd-unit_files#ftn.idm140212702055552
@@ -618,7 +621,7 @@ case "\$CHECK_IP" in
     echo "WantedBy=default.target" | tee -a /etc/systemd/system/setup-ambari.service
     # Notify systemd a new service exists
     # systemctl daemon-reload
-    # systemctl enable setup-ambari.service
+    systemctl enable setup-ambari.service
   ;;
   "${node_ip[1]}") printf "Setting up Node2-sb:\n"
     printf "Task 1: Permanently set hostname\n"
