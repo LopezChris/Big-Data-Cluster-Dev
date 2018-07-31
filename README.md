@@ -36,7 +36,7 @@ Go into Boot Maintenance Management -> Boot Options
 Now you can turn the board off, the next you turn it on again, it will perform a network boot and that is where PXE Server will respond to the Minnowboard's request for installing
 CentOS7. Once you have all Minnowboard's Boot Option set to `EFI Network* IPv4`, then you are ready to perform a network installation of CentOS7.
 
-## Perform Network Installation of CentOS7
+## Perform Network Install of CentOS7 with Ambari Server
 
 With a network installation, make sure to netboot 4 minnowboards at time until all 8 or however many you have in the cluster are done with the CentOS7 installation. If you try
 to install more than 4, you may notice that on some boards the installation didn't complete.
@@ -52,7 +52,7 @@ startup script (systemd file) for setting up ambari-server on firstboot of CentO
 on the master node. Once the installation completes, you now have CentOS7 on
 each node and ambari-server is installed and setup.
 
-## After Network Installation Completes
+## After Network Install Completes, Start Ambari Server
 
 Once you are done installing CentOS7 on each of your Minnowboards over the
 network, you can start `ambari-server` on the master node (node1-sb.hortonworks.com)
