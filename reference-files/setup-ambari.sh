@@ -2,6 +2,7 @@
 
 # After Reboot once NetBoot Finished, run this script to install Ambari
 NODE1_IP=10.1.1.21
+PSSH_PASSWD=hadoop
 
 # Verify on Ambari Node(node1-sb)
 CHECK_IP=$(hostname -I | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
@@ -28,11 +29,11 @@ case "$CHECK_IP" in
     # Copy and Send id_rsa.pub and authorized_keys files to each host
     # Reference: https://www.tecmint.com/copy-files-to-multiple-linux-servers/
     printf "Copy and Send id_rsa.pub and authorized_keys files to each host\n"
-    sshpass -p "$PSSH_PASSWD" pscp.pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -Av "~/.ssh/id_rsa.pub ~/.ssh/"
-    sshpass -p "$PSSH_PASSWD" pscp.pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -Av "~/.ssh/authorized_keys ~/.ssh/"
+    sshpass -p "$PSSH_PASSWD" pscp.pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -Av ~/.ssh/id_rsa.pub ~/.ssh/
+    sshpass -p "$PSSH_PASSWD" pscp.pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -Av ~/.ssh/authorized_keys ~/.ssh/
 
     printf "Set permissions ~/.ssh and authorized_keys on each host\n"
-    sshpass -p "$PSSH_PASSWD" pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "chmod 700 ~/.ssh"
+    sshpass -p "$PSSH_PASSWD" pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "chmod 700 ~/.ssh/"
     sshpass -p "$PSSH_PASSWD" pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "chmod 600 ~/.ssh/authorized_keys"
 
     # Done setting password-less SSH
