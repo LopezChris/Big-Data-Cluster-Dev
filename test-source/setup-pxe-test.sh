@@ -3,7 +3,7 @@
 ##
 # Setup PXE Server For CentOS7 Network Installation
 #
-# Preferred: Tested on port 1.089.1 (WORKS) private network and used IP range
+# Preferred: Tested on port 1.089.1 (WORKS) private test network and used IP range
 # and Gateway provided by IT. My nodes have access over the internet too.
 #
 # Backup Plan: Tested on port 1.089.2 (WORKS) without IP range and Gateway provided by IT
@@ -585,19 +585,15 @@ case "\$CHECK_IP" in
     printf "7: Repo List has Ambari Repo, Installing ambari-server\n"
     yum install -y ambari-server
 
-    # Add longer timeout for connecting to port 8080
-    echo "server.startup.web.timeout=150" | tee -a /etc/ambari-server/conf/ambari.properties
+    # Add longer timeout (2100 seconds = 35 minutes) for connecting to port 8080
+    echo "server.startup.web.timeout=2100" | tee -a /etc/ambari-server/conf/ambari.properties
 
     # Create ambari custom script to be run at system boot (only one time)
     echo "#!/bin/bash" | tee -a /usr/local/bin/setup-ambari.sh
     echo "printf \"Setting up ambari-server\n\"" | tee -a /usr/local/bin/setup-ambari.sh
     echo "# automate ambari-server setup to accept all default values" | tee -a /usr/local/bin/setup-ambari.sh
     echo "ambari-server setup -s" | tee -a /usr/local/bin/setup-ambari.sh
-    echo "printf \"Starting Ambari\n\"" | tee -a /usr/local/bin/setup-ambari.sh
-    echo "ambari-server start" | tee -a /usr/local/bin/setup-ambari.sh
-    echo "ambari-server status" | tee -a /usr/local/bin/setup-ambari.sh
     echo "systemctl disable setup-ambari.service" | tee -a /usr/local/bin/setup-ambari.sh
-    echo "printf \"Open Ambari UI at: http://node1-sb.hortonworks.com:8080\n\"" | tee -a /usr/local/bin/setup-ambari.sh
     # Add execute permission (if not already set)
     chmod a+x /usr/local/bin/setup-ambari.sh
 
