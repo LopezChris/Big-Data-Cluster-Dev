@@ -586,14 +586,15 @@ case "\$CHECK_IP" in
     yum install -y ambari-server
 
     # Create ambari custom script to be run at system boot (only one time)
-    echo "#!/bin/bash" | tee -a /tmp/setup-ambari.sh
-    echo "printf \"Setting up ambari-server\n\"" | tee -a /tmp/setup-ambari.sh
-    echo "# automate ambari-server setup to accept all default values" | tee -a /tmp/setup-ambari.sh
-    echo "ambari-server setup -s" | tee -a /tmp/setup-ambari.sh
-    echo "printf \"Starting Ambari\n\"" | tee -a /tmp/setup-ambari.sh
-    echo "ambari-server start" | tee -a /tmp/setup-ambari.sh
-    echo "ambari-server status" | tee -a /tmp/setup-ambari.sh
-    echo "printf \"Open Ambari UI at: http://node1-sb.hortonworks.com:8080\n\"" | tee -a /tmp/setup-ambari.sh
+    echo "#!/bin/bash" | tee -a /usr/local/bin/setup-ambari.sh
+    echo "printf \"Setting up ambari-server\n\"" | tee -a /usr/local/bin/setup-ambari.sh
+    echo "# automate ambari-server setup to accept all default values" | tee -a /usr/local/bin/setup-ambari.sh
+    echo "ambari-server setup -s" | tee -a /usr/local/bin/setup-ambari.sh
+    echo "printf \"Starting Ambari\n\"" | tee -a /usr/local/bin/setup-ambari.sh
+    echo "ambari-server start" | tee -a /usr/local/bin/setup-ambari.sh
+    echo "ambari-server status" | tee -a /usr/local/bin/setup-ambari.sh
+    echo "systemctl disable setup-ambari.service" | tee -a /usr/local/bin/setup-ambari.sh
+    echo "printf \"Open Ambari UI at: http://node1-sb.hortonworks.com:8080\n\"" | tee -a /usr/local/bin/setup-ambari.sh
     # Add execute permission (if not already set)
     chmod a+x /tmp/setup-ambari.sh
 
@@ -611,13 +612,13 @@ case "\$CHECK_IP" in
     echo "ConditionFirstBoot=yes"
     echo " " | tee -a /etc/systemd/system/setup-ambari.service
     echo "[Service]" | tee -a /etc/systemd/system/setup-ambari.service
-    echo "ExecStart=/tmp/setup-ambari.sh" | tee -a /etc/systemd/system/setup-ambari.service
+    echo "ExecStart=/usr/local/bin/setup-ambari.sh" | tee -a /etc/systemd/system/setup-ambari.service
     echo "Type=forking" | tee -a /etc/systemd/system/setup-ambari.service
     echo "[Install]" | tee -a /etc/systemd/system/setup-ambari.service
     echo "WantedBy=default.target" | tee -a /etc/systemd/system/setup-ambari.service
     # Notify systemd a new service exists
-    systemctl daemon-reload
-    systemctl enable setup-ambari.service
+    # systemctl daemon-reload
+    # systemctl enable setup-ambari.service
   ;;
   "${node_ip[1]}") printf "Setting up Node2-sb:\n"
     printf "Task 1: Permanently set hostname\n"
@@ -735,6 +736,9 @@ systemctl enable crond.service
 systemctl start crond.service
 
 # Scheduling a Cron Job as root User to run every 1 minute
+# https://crontab.guru/#*/1_*_*_*_*
+# https://www.m00nie.com/2012/07/check-service-is-running-with-systemctl-and-start-it-if-stopped-mail/
+# https://unix.stackexchange.com/questions/176226/passing-a-command-with-arguments-to-a-script
 tee -a /etc/cron.d/pxe-services-hourly << EOF
 # Run the hourly jobs
 SHELL=/bin/bash
