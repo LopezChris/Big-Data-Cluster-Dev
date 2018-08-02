@@ -434,8 +434,10 @@ git
 ntp
 chrony
 wget
+unzip
 net-tools
 epel-release
+java-1.8.0-openjdk
 
 %end
 
@@ -453,9 +455,30 @@ pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
 reboot
 EOF
 
+# Setting up PSSH for PXE Server to run commands simultaneously across each node
+echo "${node_ip[0]}" | tee -a /etc/pssh-hosts
+echo "${node_ip[1]}" | tee -a /etc/pssh-hosts
+echo "${node_ip[2]}" | tee -a /etc/pssh-hosts
+echo "${node_ip[3]}" | tee -a /etc/pssh-hosts
+echo "${node_ip[4]}" | tee -a /etc/pssh-hosts
+echo "${node_ip[5]}" | tee -a /etc/pssh-hosts
+echo "${node_ip[6]}" | tee -a /etc/pssh-hosts
+echo "${node_ip[7]}" | tee -a /etc/pssh-hosts
+
 printf "2. Setting up Password-less SSH on Each Host in the Cluster\n"
 # Run shell script on each host ip address provided in pssh-hosts file
 # Appends map of ip to host on each node's hosts file
+
+printf "Editing /etc/hosts file on PXE Server to contain hostname of each node\n"
+printf "in cluster mapped to the IP address...\n"
+echo "${node_ip[0]} ${node_sb[0]}" | tee -a /etc/hosts
+echo "${node_ip[1]} ${node_sb[1]}" | tee -a /etc/hosts
+echo "${node_ip[2]} ${node_sb[2]}" | tee -a /etc/hosts
+echo "${node_ip[3]} ${node_sb[3]}" | tee -a /etc/hosts
+echo "${node_ip[4]} ${node_sb[4]}" | tee -a /etc/hosts
+echo "${node_ip[5]} ${node_sb[5]}" | tee -a /etc/hosts
+echo "${node_ip[6]} ${node_sb[6]}" | tee -a /etc/hosts
+echo "${node_ip[7]} ${node_sb[7]}" | tee -a /etc/hosts
 
 printf "Creating public SSH keys that will be copied into Each Host\n"
 printf "Creating private SSH key that will be copied onto Ambari Server Host\n"
@@ -580,7 +603,7 @@ case "\$CHECK_IP" in
     wget http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.7.0.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
 
     # Confirm repository list has Ambari Repo
-    # yum repolist
+    yum repolist
 
     printf "7: Repo List has Ambari Repo, Installing ambari-server\n"
     yum install -y ambari-server
@@ -588,11 +611,16 @@ case "\$CHECK_IP" in
     # Add longer timeout (2100 seconds = 35 minutes) for connecting to port 8080
     echo "server.startup.web.timeout=2100" | tee -a /etc/ambari-server/conf/ambari.properties
 
+    # Install MySQL Connector for Ambari Server to use in installing Hive
+    yum install -y mysql-connector-java
+
     # Create ambari custom script to be run at system boot (only one time)
     echo "#!/bin/bash" | tee -a /usr/local/bin/setup-ambari.sh
     echo "printf \"Setting up ambari-server\n\"" | tee -a /usr/local/bin/setup-ambari.sh
     echo "# automate ambari-server setup to accept all default values" | tee -a /usr/local/bin/setup-ambari.sh
     echo "ambari-server setup -s" | tee -a /usr/local/bin/setup-ambari.sh
+    echo "Setup MySQL on Ambari Server to use with installing Hive" | tee -a /usr/local/bin/setup-ambari.sh
+    echo "ambari-server setup --jdbc-db=mysql --jdbc-driver=/usr/share/java/mysql-connector-java.jar" | tee -a /usr/local/bin/setup-ambari.sh
     echo "systemctl disable setup-ambari.service" | tee -a /usr/local/bin/setup-ambari.sh
     # Add execute permission (if not already set)
     chmod a+x /usr/local/bin/setup-ambari.sh
