@@ -14,7 +14,7 @@ Once it is mounted, we run the setup scripts.
 ~~~bash
 mkdir -p /mnt/usb-devices/
 mount -t vfat /dev/sdb1 /mnt/usb-devices/
-cd /mnt/usb-pxe-scripts/Multi-Node-HDP-Cluster-Install
+cd /mnt/usb-devices/Multi-Node-HDP-Cluster-Install/assets/test-source
 cd test-source
 bash setup-pxe-internet-access.sh | tee -a setup-pxe-internet-log.txt
 bash setup-pxe-test.sh | tee -a setup-pxe-log.txt
@@ -51,6 +51,18 @@ ambari-server on the master node (node1-sb.hortonworks.com) and create a custom
 startup script (systemd file) for setting up ambari-server on firstboot of CentOS7
 on the master node. Once the installation completes, you now have CentOS7 on
 each node and ambari-server is installed and setup.
+
+Monitor the RAM of each node in the cluster from the PXE server:
+
+~~~bash
+pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -i "free -m"
+~~~
+
+Free up cache and buffer to create more space in RAM:
+
+~~~bash
+pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -i "sync; echo 1 > /proc/sys/vm/drop_caches"
+~~~
 
 ## After Network Install Completes, Start Ambari Server
 
