@@ -14,7 +14,7 @@ Built for **Centos7**.
 
 ## Deployment Options Supported
 
-Tested on **8 Minnowboard Max Turbots**, **10 Amazon Web Services EC2 Instances**.
+Testing on **8 Minnowboard Max Turbots**, **10 Amazon Web Services EC2 Instances**.
 
 ## Instruction Manual
 
