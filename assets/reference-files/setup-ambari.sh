@@ -40,19 +40,19 @@ case "$CHECK_IP" in
     printf "Done Setting Up Password-less SSH for Ambari to later install HDP....\n"
 
     printf "3: Enable NTP on each node in Cluster and Browser Host\n"
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl enable ntpd"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -i "systemctl enable ntpd"
 
     printf "Enable CHRONY on each node in Cluster and Browser Host\n"
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl start chronyd"
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl enable chronyd"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -i "systemctl start chronyd"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -i "systemctl enable chronyd"
 
     printf "4: Disable iptables on each host for Ambari to communicate with them\n"
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "systemctl disable firewalld"
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "service firewalld stop"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -i "systemctl disable firewalld"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -i "service firewalld stop"
 
     printf "5: Disable SELinux and PackageKit\n"
     # Temporarily disable SELinux
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "setenforce 0"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -i "setenforce 0"
     # Permanently disable SELinux
     # pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "perl -pi -e 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config"
 
@@ -68,7 +68,7 @@ case "$CHECK_IP" in
 
     # Set umask to 022 since Ambari, HDP, HDF support that value
     printf "Set unmask to 0022 since Ambari, HDP, HDF support that value\n"
-    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -A -i "umask 0022"
+    pssh -h /etc/pssh-hosts -l root -x "-o StrictHostKeyChecking=no" -i "umask 0022"
 
     # On Node1 Server Host, download Ambari Repo
     printf "6: Downloading Ambari 2.7 Repo\n"
