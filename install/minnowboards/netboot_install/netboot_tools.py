@@ -2,6 +2,7 @@
 import re
 import socket
 import struct
+import platform
 import subprocess
 
 # Net Boot Server Tools
@@ -29,10 +30,9 @@ class fileTools:
         file.close()
 
 
-class pxeTools:
-    def __init__(self, server_name=None, deploy=None):
-        self.name = name
-        self.deploy = deploy
+class pxeNetTools:
+    def __init__(self, deployment=None):
+        self.deployment = deployment
 
     def get_hostname():
         """Get Hostname of local machine"""
@@ -63,7 +63,44 @@ class pxeTools:
 
     def get_net_inter_card():
         """Get Network Interface (Should work on CentOS7, Ubuntu)"""
-        return subprocess.call("ls /sys/class/net/ | grep \"en.*\"", shell=True)
+        for pattern in platform.linux_distribution():
+            if 'CentOS' in pattern:
+                result = subprocess.check_output("ls /sys/class/net/ | grep \"en.*\"", shell=True).strip()
+        return result
 
     def get_subnetmask():
         """Find Subnetmask"""
+        for pattern in platform.linux_distribution():
+            if 'CentOS' in pattern:
+                result = subprocess.check_output(str("ifconfig " + get_net_inter_card() + " | awk 'FNR == 2 {print $4}'"), shell=True).strip()
+        return result
+
+    def get_broadcast():
+        """Get Broadcast Address"""
+        for pattern in platform.linux_distribution():
+            if 'CentOS' in pattern:
+                result = subprocess.check_output(str("ifconfig " + get_net_inter_card() + " | awk 'FNR == 2 {print $6}'"), shell=True).strip()
+        return result
+
+    def get_gateway():
+        """Get Gateway Router IP Address"""
+        for pattern in platform.linux_distribution():
+            if 'CentOS' in pattern:
+                result = subprocess.check_output(str("netstat -r -n | awk 'FNR == 3 {print $2}'"), shell=True).strip()
+        return result
+
+    def get_subnet():
+        """Get Subnet IP Address"""
+        ipaddress_num = ip2num(get_ip())
+        subnetmask_num = ip2num(get_subnetmask())
+        subnet_num = ipaddress_num & subnetmask_num
+        subnet_ipaddr = num2ip(subnet_num)
+        return subnet_ipaddr
+
+    def set_ip_within_subnet(subnet, ip):
+        """Set the IP within the Subnet for a device"""
+        subnet_num = ip2num(subnet)
+        offset_num = ip2num(ip)
+        ip_num_within_subnet = subnet_num + offset_num
+        ip_within_subnet = num2ip(ip_num_within_subnet)
+        return ip_within_subnet
