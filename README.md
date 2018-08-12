@@ -22,4 +22,8 @@ See documentation for a full tutorial on setting up a Distributed Sandbox Cluste
 
 ## Mission
 
-Our mission is to create a smoother learning experience for people of all different backgrounds to acquire practical skills from automating network installation of clusters in data center like environments to designing and developing Big Data Applications.
+Creating a smoother learning experience for people of all different backgrounds to acquire practical skills from automating network installation of clusters in data center like environments to designing and developing Big Data Applications.
+
+## Vision
+
+Empowering students and industry professionals all over the world to gain practical skills in Big Data by developing Production Ready Clusters and Big Data Applications powered by Hortonworks Connected Data Platforms leveraging Data Engineering and Data Science practices.
