@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import os
-import re
 import subprocess
 import platform
 import netboot_tools
@@ -38,18 +36,18 @@ for package in packages:
 
 # Gather Network Data for PXE Server to Setup Internal Network for Minnowboard Cluster
 print "Gathering Network Data about PXE Server\n"
-netboot_tools.pxeNetTools('minnowboard')
+pxe_net_tools = netboot_tools.netTools('minnowboard')
 # Network Addresses associated with PXE Server
-ip_addr = netboot_tools.get_ip()
-interface_name = netboot_tools.get_net_inter_card()
-subnetmask = netboot_tools.get_subnetmask()
-broadcast = netboot_tools.get_broadcast()
-gateway_router_ip = netboot_tools.get_gateway()
-subnet_ip = netboot_tools.get_subnet()
+ip_addr = pxe_net_tools.get_ip()
+interface_name = pxe_net_tools.get_net_inter_card()
+subnetmask = pxe_net_tools.get_subnetmask()
+broadcast = pxe_net_tools.get_broadcast()
+gateway_router_ip = pxe_net_tools.get_gateway()
+subnet_ip = pxe_net_tools.get_subnet()
 # Set Subnet IP Range for Dynamic Allocation for Random IoT Devices connecting to Minnowboard CentOS Cluster
 print "Setting the Subnet Dynamic IP Range when IoT Devices connect to Minnowboard Cluster\n"
-iot_start_ip_range = netboot_tools.set_ip_within_subnet(subnet_ip, 0.0.0.50)
-iot_end_ip_range = netboot_tools.set_ip_within_subnet(subnet_ip, 0.0.0.100)
+iot_start_ip_range = pxe_net_tools.set_ip_within_subnet(subnet_ip, 0.0.0.50)
+iot_end_ip_range = pxe_net_tools.set_ip_within_subnet(subnet_ip, 0.0.0.100)
 # Devices in CentOS Cluster
 print "Setting Static IPs for Minnowboards that'll be used to build the Cluster\n"
 # Minnowboard Hardware Address (Usually called MAC address)
@@ -66,6 +64,16 @@ node_ip = []
 node_ip_base = "0.0.0.2"
 for node_ip_offset in range(1, (len(minnowboard_mac) + 1)):
     node_static_ip = str(node_ip_base + node_ip_offset)
-    node_ip.append(netboot_tools.set_ip_within_subnet(subnet_ip, node_static_ip))
+    node_ip.append(pxe_net_tools.set_ip_within_subnet(subnet_ip, node_static_ip))
 
 print "Configuring HTTP Server to Export Installation ISO Image\n"
+centos7_src_url = 'http://ftp.usf.edu/pub/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso'
+centos7_iso_path = '/root/CentOS-7-x86_64-Minimal-1804.iso'
+pxe_net_tools.download_file(centos7_src_url, centos7_iso_path)
+
+pxe_file_tools = netboot_tools.fileTools()
+centos7_iso_mnt = '/mnt/centos7-install/'
+pxe_file_tools.createDirectory(centos7_mnt_path)
+pxe_file_tools.mountDirectory(centos7_iso_path, centos7_iso_mnt)
+
+# currently figuring out how to copy files over to destination recursively using python 2.7
