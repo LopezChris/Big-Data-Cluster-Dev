@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import re
+import os
 import socket
 import struct
+import urllib2
 import platform
 import subprocess
 
@@ -9,28 +11,54 @@ import subprocess
 
 class fileTools:
     def __init__(self, filename=None):
-        self.filename = filename
+        if filename is not None:
+            self.filename = filename
+        else:
+            print 'filename not initialized\n'
 
-    def repl_file_string(self, regex_string, repl):
+    def repl_file_string(self, regex_string, repl, filename=None):
         """Search and replace all occurrences of string in a file via regex"""
-        file = open(self.filename, "r+")
-        file_content = file.read()
-        file.seek(0)
-        file.write(re.sub(regex_string, repl, file_content))
-        file.truncate()
-        file.close()
+        if filename is not None:
+            self.filename = filename
+        if self.filename is not None:
+            file = open(self.filename, "r+")
+            file_content = file.read()
+            file.seek(0)
+            file.write(re.sub(regex_string, repl, file_content))
+            file.truncate()
+            file.close()
+        else:
+            print 'Need a filename before replacing string in file\n'
 
-    def append_if_no_match(self, regex_pattern, property, value):
+    def append_if_no_match(self, regex_pattern, property, value, filename=None):
         """If there's no match for regex, then appends key=value to file"""
-        file = open(self.filename, "a+")
-        file_content = file.read()
-        match = re.match(regex_pattern, file_content)
-        if match is None:
-            file.write(str(property + value + "\n"))
-        file.close()
+        if filename is not None:
+            self.filename = filename
+        if self.filename is not None:
+            file = open(self.filename, "a+")
+            file_content = file.read()
+            match = re.match(regex_pattern, file_content)
+            if match is None:
+                file.write(str(property + value + "\n"))
+            file.close()
+        else:
+            print 'Need a filename before appending to file on no match\n'
 
+    def createDirectory(path):
+        """Create directory if path doesn't exist"""
+        try:
+            if not os.path.exists(path):
+                os.makedirs(path)
+            except OSError:
+                print "Error: Creating directory path: ", path
 
-class pxeNetTools:
+    def mountDirectory(file, mnt_dst):
+        """Take the file and mount to path destination"""
+        for pattern in platform.linux_distribution():
+            if 'CentOS' in pattern:
+                subprocess.call(str("mount -o loop,ro -t iso9660 " + file + " " + mnt_dst), shell=True)
+
+class netTools:
     def __init__(self, deployment=None):
         self.deployment = deployment
 
@@ -104,3 +132,9 @@ class pxeNetTools:
         ip_num_within_subnet = subnet_num + offset_num
         ip_within_subnet = num2ip(ip_num_within_subnet)
         return ip_within_subnet
+
+    def download_file(url, dst):
+        f = urllib2.urlopen(url)
+        data = f.read()
+        with open(dst, "wb") as url_file:
+            url_file.write(data)
