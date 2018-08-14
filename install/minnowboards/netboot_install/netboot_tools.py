@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import re
 import os
+import dbus
 import socket
 import struct
 import urllib2
@@ -9,7 +10,7 @@ import subprocess
 
 # Net Boot Server Tools
 
-class fileTools:
+class fsTools:
     def __init__(self, filename=None):
         if filename is not None:
             self.filename = filename
@@ -44,7 +45,7 @@ class fileTools:
         else:
             print 'Need a filename before appending to file on no match\n'
 
-    def createDirectory(path):
+    def create_directory(path):
         """Create directory if path doesn't exist"""
         try:
             if not os.path.exists(path):
@@ -52,13 +53,107 @@ class fileTools:
             except OSError:
                 print "Error: Creating directory path: ", path
 
-    def mountDirectory(file, mnt_dst):
+    def mount_directory(file, mnt_dst):
         """Take the file and mount to path destination"""
         for pattern in platform.linux_distribution():
             if 'CentOS' in pattern:
                 subprocess.call(str("mount -o loop,ro -t iso9660 " + file + " " + mnt_dst), shell=True)
 
-class netTools:
+    def ca_permissions(mode, path):
+        """Change access permissions to file system object (file and directory)"""
+        for pattern in platform.linux_distribution():
+            if 'CentOS' in pattern:
+                subprocess.call(str("chmod " + mode + " " + path), shell=True)
+
+    def restart_systemd_service(service, mode = "replace"):
+        sysbus = dbus.SystemBus()
+        systemd1 = sysbus.get_objects('org.freedesktop.systemd1', 'org/freedesktop/systemd1')
+        manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
+        if manager is None:
+            result = False
+        try:
+            job = manager.RestartUnit(service, mode)
+            result = True
+        except dbus.exceptions.DBusException as error:
+            print error
+            result = False
+        return result
+
+    def start_systemd_service(service, mode = "replace"):
+        sysbus = dbus.SystemBus()
+        systemd1 = sysbus.get_objects('org.freedesktop.systemd1', 'org/freedesktop/systemd1')
+        manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
+        if manager is None:
+            result = False
+        try:
+            job = manager.StartUnit(service, mode)
+            result = True
+        except dbus.exceptions.DBusException as error:
+            print error
+            result = False
+        return result
+
+    def stop_systemd_service(service, mode = "replace"):
+        sysbus = dbus.SystemBus()
+        systemd1 = sysbus.get_objects('org.freedesktop.systemd1', 'org/freedesktop/systemd1')
+        manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
+        if manager is None:
+            result = False
+        try:
+            job = manager.StopUnit(service, mode)
+            result = True
+        except dbus.exceptions.DBusException as error:
+            print error
+            result = False
+        return result
+
+
+    def enable_systemd_service(service):
+        sysbus = dbus.SystemBus()
+        systemd1 = sysbus.get_objects('org.freedesktop.systemd1', 'org/freedesktop/systemd1')
+        manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
+        if manager is None:
+            result = False
+        try:
+            job = manager.EnableUnitFiles([service],
+                                          dbus.Boolean(False),
+                                          dbus.Boolean(True))
+            result = True
+        except dbus.exceptions.DBusException as error:
+            print error
+            result = False
+        return result
+
+    def disable_systemd_service(service):
+        sysbus = dbus.SystemBus()
+        systemd1 = sysbus.get_objects('org.freedesktop.systemd1', 'org/freedesktop/systemd1')
+        manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
+        if manager is None:
+            result = False
+        try:
+            job = manager.DisableUnitFiles([service],
+                                          dbus.Boolean(False))
+            result = True
+        except dbus.exceptions.DBusException as error:
+            print error
+            result = False
+        return result
+
+    def get_systemd_service_state(service):
+        sysbus = dbus.SystemBus()
+        systemd1 = sysbus.get_objects('org.freedesktop.systemd1', 'org/freedesktop/systemd1')
+        manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
+        if manager is None:
+            result = False
+        try:
+            state = manager.GetUnitFileState(service)
+            result = state
+        except dbus.exceptions.DBusException as error:
+            print error
+            result = False
+        return result
+
+class netHighLevelTools:
     def __init__(self, deployment=None):
         self.deployment = deployment
 
@@ -134,7 +229,32 @@ class netTools:
         return ip_within_subnet
 
     def download_file(url, dst):
+        """Download file from URL and store to destination"""
         f = urllib2.urlopen(url)
         data = f.read()
         with open(dst, "wb") as url_file:
             url_file.write(data)
+
+    def add_service_to_firewall(service):
+        """Add systemd service to firewall"""
+        for pattern in platform.linux_distribution():
+            if 'CentOS' in pattern:
+                subprocess.call(str("firewall-cmd --permanent --add-service=" + service), shell=True)
+
+    def add_port_to_firewall(port, protocol, zone):
+        """Opens port to firewall for zone using protocol"""
+        for pattern in platform.linux_distribution():
+            if 'CentOS' in pattern:
+                subprocess.call(str("firewall-cmd --zone=" + zone + " -add-port=" + port + "/" + protocol + " --permanent"), shell=True)
+
+    def get_firewall_active_zones():
+        """Get Firewall Active Zones"""
+        for pattern in platform.linux_distribution():
+            if 'CentOS' in pattern:
+                subprocess.call(str("firewall-cmd --get-active-zones"), shell=True)
+
+    def reload_firewall():
+        """Reloads firewall with latest configurations"""
+        for pattern in platform.linux_distribution():
+            if 'CentOS' in pattern:
+                subprocess.call("firewall-cmd --reload", shell=True)
