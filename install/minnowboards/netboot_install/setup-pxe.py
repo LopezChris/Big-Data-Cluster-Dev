@@ -84,9 +84,30 @@ pxe_fs_tools.ca_permissions('777', centos_to_http_path)
 pxe_fs_tools.enable_systemd_service('httpd.service')
 # Start HTTPD Service now
 pxe_fs_tools.start_systemd_service('httpd.service')
-# Add HTTP service to firewall to allow for HTTP web traffic on port 80
-pxe_net_tools.add_service_to_firewall('http')
-pxe_net_tools.reload_firewall()
+# Add HTTP service to firewall to allow for HTTP web traffic on port 80, then reload new rule
+    # Connecting to the System Bus Daemon
+    # On MAC, I need to do 'brew install dbus', comes default on linux centos7
+bus = dbus.SystemBus()
+    # Start working with object in another application: Needed are
+    # 'bus name': identifies which application you want to communicate with,
+        # which is a dot separated string with a reversed domain name
+    # 'object path': applications can export objects
+    # What we can do with remote objects is call their methods
+    # To interact with objects, we need to use a proxy object,
+    # to obtain proxy we call 'get_object' method
+    # The proxy acts as the 'stand-in' for the remote object
+firewalld1_cmd = bus.get_object('org.fedoraproject.FirewallD1', '/org/fedoraproject/FirewallD1')
+# Creating proxy to access remote object interface for permanent zone config
+firewalld1_cmd_perm_zone_iface = dbus.Interface(firewalld1_cmd, 'org.fedoraproject.FirewallD1.config.zone')
+firewalld1_cmd_zone_iface = dbus.Interface(firewalld1_cmd, 'org.fedoraproject.FirewallD1.zone')
+firewalld1_cmd_iface = dbus.Interface(firewalld1, 'org.fedoraproject.FirewallD1')
+firewalld1_cmd_iface.listServices()
+firewalld1_cmd_perm_zone_iface.addService('http')
+# Reload firewall rules and keep state information
+firewalld1_cmd_iface.reload()
+# Get list of supported Services in runtime
+#pxe_net_tools.add_service_to_firewall('http')
+# pxe_net_tools.reload_firewall()
 
 # Modify Shellinabox config file to have PXE server IP
 sh_box_file = '/etc/sysconfig/shellinaboxd'
@@ -98,6 +119,10 @@ for regp, r in zip(regex_pattern, repl):
 pxe_fs_tools.enable_systemd_service('shellinaboxd.service')
 pxe_fs_tools.start_systemd_service('shellinaboxd.service')
 # Shellinaboxd runs on port 4200 and uses protocol tcp
-pxe_net_tools.get_firewall_active_zones()
-pxe_net_tools.add_port_to_firewall('4200', 'tcp', 'public')
-pxe_net_tools.reload_firewall()
+firewalld1_cmd_zone_iface.getActiveZones()
+firewalld1_cmd_perm_zone_iface.addPort('4200', 'tcp')
+firewalld1_cmd_iface.reload()
+
+# pxe_net_tools.get_firewall_active_zones()
+# pxe_net_tools.add_port_to_firewall('4200', 'tcp', 'public')
+# pxe_net_tools.reload_firewall()
