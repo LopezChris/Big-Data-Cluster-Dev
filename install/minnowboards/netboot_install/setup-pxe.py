@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import shutil
 import subprocess
 import platform
 import netboot_tools
@@ -36,7 +37,7 @@ for package in packages:
 
 # Gather Network Data for PXE Server to Setup Internal Network for Minnowboard Cluster
 print "Gathering Network Data about PXE Server\n"
-pxe_net_tools = netboot_tools.netTools('minnowboard')
+pxe_net_tools = netboot_tools.netHighLevelTools('minnowboard')
 # Network Addresses associated with PXE Server
 ip_addr = pxe_net_tools.get_ip()
 interface_name = pxe_net_tools.get_net_inter_card()
@@ -70,10 +71,33 @@ print "Configuring HTTP Server to Export Installation ISO Image\n"
 centos7_src_url = 'http://ftp.usf.edu/pub/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso'
 centos7_iso_path = '/root/CentOS-7-x86_64-Minimal-1804.iso'
 pxe_net_tools.download_file(centos7_src_url, centos7_iso_path)
-
-pxe_file_tools = netboot_tools.fileTools()
+pxe_fs_tools = netboot_tools.fsTools()
 centos7_iso_mnt = '/mnt/centos7-install/'
-pxe_file_tools.createDirectory(centos7_mnt_path)
-pxe_file_tools.mountDirectory(centos7_iso_path, centos7_iso_mnt)
+pxe_fs_tools.create_directory(centos7_mnt_path)
+pxe_fs_tools.mount_directory(centos7_iso_path, centos7_iso_mnt)
+# Copy files over to destination recursively
+http_server_path = '/var/www/html/'
+shutil.copytree(centos7_iso_mnt, http_server_path)
+centos_to_http_path = '/var/www/html/centos7-install/'
+pxe_fs_tools.ca_permissions('777', centos_to_http_path)
+# Enable HTTPD Service to start on bootup
+pxe_fs_tools.enable_systemd_service('httpd.service')
+# Start HTTPD Service now
+pxe_fs_tools.start_systemd_service('httpd.service')
+# Add HTTP service to firewall to allow for HTTP web traffic on port 80
+pxe_net_tools.add_service_to_firewall('http')
+pxe_net_tools.reload_firewall()
 
-# currently figuring out how to copy files over to destination recursively using python 2.7
+# Modify Shellinabox config file to have PXE server IP
+sh_box_file = '/etc/sysconfig/shellinaboxd'
+regex_pattern = [r'#[ ]*OPTS=\"-t', r'host.*[^\"]']
+repl = ['OPTS=\"-t', ip_addr]
+for regp, r in zip(regex_pattern, repl):
+    pxe_fs_tools.repl_file_string(regp, r, sh_box_file)
+# Enable Shellinabox Service to start on bootup
+pxe_fs_tools.enable_systemd_service('shellinaboxd.service')
+pxe_fs_tools.start_systemd_service('shellinaboxd.service')
+# Shellinaboxd runs on port 4200 and uses protocol tcp
+pxe_net_tools.get_firewall_active_zones()
+pxe_net_tools.add_port_to_firewall('4200', 'tcp', 'public')
+pxe_net_tools.reload_firewall()
