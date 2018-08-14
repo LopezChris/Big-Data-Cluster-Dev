@@ -22,7 +22,7 @@ lapdns = "216.116.96.2"
 # Update ifcfg-enp0s3, so PXE Server in the cluster network can get access to the internet
 network_file = "/etc/sysconfig/network-scripts/ifcfg-enp0s3"
 # Search for regex pattern and replace with repl string in network_file
-ifcfg_file = netboot_tools.fileTools(network_file)
+ifcfg_file = netboot_tools.fsTools(network_file)
 regex_pattern = [r'BOOTPROTO=dhcp', r'ONBOOT=no']
 repl = ['BOOTPROTO=static', 'ONBOOT=yes']
 for regp, r in zip(regex_pattern, repl):
@@ -37,7 +37,7 @@ for regp, p, v in zip(regex_pattern, property, value):
 
 # Update /etc/resolv.conf with Public DNS (name servers)
 dns_file = "/etc/resolv.conf"
-resolv_file = netboot_tools.fileTools(dns_file)
+resolv_file = netboot_tools.fsTools(dns_file)
 regex_pattern = [r'8.8.8.8', r'104.155.28.90', r'216.116.96.2']
 value = [google_pdns, mview_pdns, lapdns]
 for regp, v in zip(regex_pattern, value):
